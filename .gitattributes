@@ -18,6 +18,7 @@ LICENSE text eol=lf
 *.pcm binary
 *.afy binary
 *.png binary
+*.gif binary
 *.jpg binary
 *.webm binary
 *.ttf binary

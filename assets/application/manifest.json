@@ -177,5 +177,17 @@
     "pillow": "12.3.0",
     "generator": "tools/generate-weather-small-font.py",
     "fallback": "lv_font_montserrat_24"
+  },
+  "home_assets.c": {
+    "bytes": 1893925,
+    "sha256": "66f165bd6102896f750f43c312dea30090a7ae347a941b41aa737dc7b672763e"
+  },
+  "home_assets.h": {
+    "bytes": 497,
+    "sha256": "1f3efa9bbfa557bc521fb8af801da8878cea19df12039afd100e1b8401e02a14"
+  },
+  "home-assets.json": {
+    "bytes": 2222,
+    "sha256": "a202a3a55226641cca28822570854af942c3616f76874cc2f8384b96ffc7b5c3"
   }
 }

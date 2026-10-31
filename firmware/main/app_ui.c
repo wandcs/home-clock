@@ -33,11 +33,16 @@
 #include "bsp/esp-bsp.h"
 #include "bsp/display.h"
 #include "../../assets/application/navigation_bell.h"
+#include "../../assets/application/home_assets.h"
 
 extern const lv_font_t clock_font_28, clock_font_44, clock_font_240, clock_font_weather_24;
 extern const lv_image_dsc_t clock_gear_icon, clock_house_icon, clock_softTemp_icon, clock_softDrop_icon;
 static lv_obj_t *home, *settings, *preview, *brightness_label;
-static lv_obj_t *temperature_label, *humidity_label, *sensor_note;
+static lv_obj_t *temperature_label, *humidity_label, *sensor_note, *indoor_title;
+/* Three visible labels share one value/baseline; this cache is also the exact
+ * text represented by those labels in diagnostic JSON, never a hidden label. */
+typedef struct { lv_obj_t *whole,*fraction,*unit; char text[32]; int x,width; } home_reading_t;
+static home_reading_t home_temperature,home_humidity,home_weather;
 static lv_obj_t *brightness_slider,*preview_note,*brightness_summary,*brightness_detail,*wifi_detail;
 static lv_obj_t *first_next,*first_status;
 typedef struct {lv_obj_t *back,*title;} child_header_t;
@@ -84,6 +89,7 @@ static unsigned lvgl_stack_free_min;
 static int settings_return;
 static bool overlay_was_visible;
 static void render_weather(void);
+static void text_if_changed(lv_obj_t *obj,const char *text);
 static void volume_refresh(void);
 static void volume_finish(void){
     if(!volume_adjusting)return;
@@ -220,7 +226,7 @@ void app_ui_status(const char *event,uint32_t rid) {
         browse_motion.max_flush_wait_us,browse_motion.max_offset,browse_motion.max_settling?"true":"false");
 #endif
     printf("\"sensor_sequence\":%"PRIu32",\"rendered_sequence\":%"PRIu32",\"temperature_text\":\"%s\",\"humidity_text\":\"%s\",\"sht_valid\":%s,\"sht_reason\":\"%s\",\"sht_injection\":%d,\"sht_acquired_ms\":%"PRIu64",\"sht_attempted_ms\":%"PRIu64",\"sht_samples\":%"PRIu32",\"sht_failures\":%"PRIu32",\"sht_injected_failures\":%"PRIu32",",
-      s.sequence,rendered_sequence,lv_label_get_text(temperature_label),lv_label_get_text(humidity_label),measurement_valid(&s.sht,now)?"true":"false",measurement_reason(&s.sht,now),s.sht.injection,s.sht.acquired_ms,s.sht.attempted_ms,s.sht.samples,s.sht.failures,s.sht.injected_failures);
+      s.sequence,rendered_sequence,home_temperature.text,home_humidity.text,measurement_valid(&s.sht,now)?"true":"false",measurement_reason(&s.sht,now),s.sht.injection,s.sht.acquired_ms,s.sht.attempted_ms,s.sht.samples,s.sht.failures,s.sht.injected_failures);
     printf("\"bh_valid\":%s,\"bh_reason\":\"%s\",\"bh_injection\":%d,\"bh_acquired_ms\":%"PRIu64",\"bh_attempted_ms\":%"PRIu64",\"bh_samples\":%"PRIu32",\"bh_failures\":%"PRIu32",\"bh_injected_failures\":%"PRIu32,
       measurement_valid(&s.bh,now)?"true":"false",measurement_reason(&s.bh,now),s.bh.injection,s.bh.acquired_ms,s.bh.attempted_ms,s.bh.samples,s.bh.failures,s.bh.injected_failures);
     if(measurement_valid(&s.sht,now)) printf(",\"temperature_c\":%.2f,\"humidity_pct\":%.2f",s.sht.first,s.sht.second);
@@ -231,7 +237,7 @@ void app_ui_status(const char *event,uint32_t rid) {
 #if CONFIG_CLOCK_DIAGNOSTICS
     printf(",\"layout_sample\":%d",layout_sample);
 #endif
-    printf(",\"browse_idle_ms\":%"PRIu64",\"home_weather_title\":\"%s\",\"home_weather_value\":\"%s\",\"home_weather_note\":\"%s\",\"weather_update_text\":\"%s\"",now-browse_activity,lv_label_get_text(weather_title),lv_label_get_text(weather_value),lv_label_get_text(weather_note),disclose_weather_metadata?lv_label_get_text(weather_update):"");
+    printf(",\"browse_idle_ms\":%"PRIu64",\"home_weather_title\":\"%s\",\"home_weather_value\":\"%s\",\"home_weather_note\":\"%s\",\"weather_update_text\":\"%s\"",now-browse_activity,lv_label_get_text(weather_title),home_weather.text,lv_label_get_text(weather_note),disclose_weather_metadata?lv_label_get_text(weather_update):"");
     printf(",\"lvgl_stack_free_min\":%u",lvgl_stack_free_min);
     printf(",\"alarm_runtime_phase\":%d,\"alarm_runtime_error\":%d,\"alarm_audio_state\":%d,\"alarm_audio_error\":%d,\"alarm_audio_ready\":%s,\"alarm_runtime_blocked\":%s,\"alarm_overlay\":%s,\"alarm_owner_stack_free_min\":%u",alarm_runtime.phase,alarm_runtime.error,alarm_runtime.audio,alarm_runtime.audio_error,alarm_runtime.audio_ready?"true":"false",alarm_runtime.blocked?"true":"false",ring_overlay&&!lv_obj_is_hidden(ring_overlay)?"true":"false",am_service_stack_free_min());
     calendar_runtime_status();
@@ -287,33 +293,72 @@ static lv_obj_t *image(lv_obj_t *parent,const lv_image_dsc_t *src,int x,int y) {
  * The reference glyph also supplies its descent: Chinese 内 for headings,
  * digit 0 for readings. This stays fixed when the displayed text changes. */
 typedef struct { int baseline; const lv_font_t *font; uint32_t reference; } home_row_t;
-static const home_row_t title_row={433,&clock_font_28,0x5185};
-static const home_row_t value_row={495,&clock_font_44,'0'};
-static const home_row_t note_row={549,&clock_font_28,0x5185};
-enum { HOME_LEFT=48, HOME_DIVIDER=421, HOME_INDOOR=458, HOME_HUMIDITY=780,
-       HOME_RIGHT=976, HOME_ICON_SIZE=32, HOME_ICON_GAP=12 };
+static const home_row_t title_row={424,&clock_home_font_32,0x5185};
+static const home_row_t value_row={509,&clock_home_font_64,'0'};
+static const home_row_t note_row={554,&clock_home_font_30,0x8212};
+enum { HOME_LEFT=48, HOME_DIVIDER=421, HOME_INDOOR=458, HOME_HUMIDITY=776,
+       HOME_RIGHT=976, HOME_ICON_SIZE=36, HOME_ICON_GAP=12 };
 static lv_obj_t *home_label(const home_row_t *row,const char *text,int x,int width,uint32_t color) {
     lv_obj_t *o=label(home,text,x,row->baseline-(row->font->line_height-row->font->base_line),row->font,color);
     lv_obj_set_width(o,width);
     lv_label_set_long_mode(o,LV_LABEL_LONG_CLIP); /* One reserved row; no reflow. */
     return o;
 }
-static void home_icon(const home_row_t *row,const lv_image_dsc_t *src,int x) {
-    /* Existing R6 assets are raw ARGB8888 (B,G,R,A). Anchor visible ink,
-     * including its soft edge, rather than the transparent 32px image box. */
-    int left=src->header.w, right=0, bottom=0;
-    for(int y=0;y<src->header.h;y++) for(int ix=0;ix<src->header.w;ix++) {
-        if(src->data[y*src->header.stride+ix*4+3]) {
-            if(ix<left) left=ix;
-            if(ix+1>right) right=ix+1;
-            if(y+1>bottom) bottom=y+1;
+static void home_icon_position(lv_obj_t *obj,const home_row_t *row,const lv_image_dsc_t *src,int x) {
+    int left=src->header.w,right=0,top=src->header.h,bottom=0;
+    for(int y=0;y<src->header.h;y++)for(int ix=0;ix<src->header.w;ix++){
+        if(src->data[y*src->header.stride+ix*4+3]){
+            if(ix<left)left=ix;
+            if(ix+1>right)right=ix+1;
+            if(y<top)top=y;
+            if(y+1>bottom)bottom=y+1;
         }
     }
     lv_font_glyph_dsc_t glyph;
     bool found=lv_font_get_glyph_dsc(row->font,&glyph,row->reference,0);
-    assert(found && bottom>0);
-    int visible_bottom=row->baseline-glyph.ofs_y;
-    image(home,src,x+(HOME_ICON_SIZE-(right-left))/2-left,visible_bottom-bottom);
+    assert(found&&bottom>0);
+    /* 32 -> 36px, fixed local icon scale; center visible ink on the row. */
+    lv_image_set_pivot(obj,0,0);lv_image_set_scale(obj,288);
+    int center=row->baseline-glyph.ofs_y-glyph.box_h/2;
+    lv_obj_set_pos(obj,x+HOME_ICON_SIZE/2-(left+right)*9/16,center-(top+bottom)*9/16);
+}
+static lv_obj_t *home_icon(const home_row_t *row,const lv_image_dsc_t *src,int x) {
+    lv_obj_t *o=image(home,src,x,0);home_icon_position(o,row,src,x);return o;
+}
+static int home_text_width(const char *text,const lv_font_t *font){
+    lv_point_t size;lv_text_get_size(&size,text,font,0,0,1024,LV_TEXT_FLAG_NONE);return size.x;
+}
+static void home_reading_set(home_reading_t *r,const char *text){
+    if(!r->whole||!strcmp(r->text,text))return;
+    char number[24],whole[24],fraction[12];const char *unit=strstr(text,"°C");
+    if(!unit)unit=strchr(text,'%');
+    if(!unit)unit=text+strlen(text);
+    size_t n=(size_t)(unit-text);if(n>=sizeof number)n=sizeof number-1;
+    memcpy(number,text,n);number[n]=0;
+    char *dot=strchr(number,'.');fraction[0]=0;
+    if(dot){snprintf(fraction,sizeof fraction,"%s",dot);*dot=0;}
+    snprintf(whole,sizeof whole,"%s",number);
+    text_if_changed(r->whole,whole);text_if_changed(r->fraction,fraction);text_if_changed(r->unit,unit);
+    int x=r->x;
+    const lv_font_t *fonts[]={&clock_home_font_64,&clock_home_font_46,&clock_home_font_34};
+    lv_obj_t *labels[]={r->whole,r->fraction,r->unit};const char *parts[]={whole,fraction,unit};
+    for(unsigned i=0;i<3;i++){
+        if(i==2&&unit[0])x+=2;
+        lv_obj_set_pos(labels[i],x,value_row.baseline-(fonts[i]->line_height-fonts[i]->base_line));
+        x+=home_text_width(parts[i],fonts[i]);
+    }
+    snprintf(r->text,sizeof r->text,"%s",text);
+}
+static lv_obj_t *home_reading_create(home_reading_t *r,int x,int width,const char *text){
+    *r=(home_reading_t){.x=x,.width=width};
+    r->whole=label(home,"",x,0,&clock_home_font_64,0x9caebc);
+    r->fraction=label(home,"",x,0,&clock_home_font_46,0x9caebc);
+    r->unit=label(home,"",x,0,&clock_home_font_34,0x9caebc);
+    home_reading_set(r,text);return r->whole;
+}
+static void home_reading_color(home_reading_t *r,uint32_t color){
+    lv_obj_t *labels[]={r->whole,r->fraction,r->unit};
+    for(unsigned i=0;i<3;i++)lv_obj_set_style_text_color(labels[i],lv_color_hex(color),0);
 }
 static int weather_text_width(const char *text){
     lv_point_t size;lv_text_get_size(&size,text,&clock_font_28,0,0,1024,LV_TEXT_FLAG_NONE);return size.x;
@@ -798,7 +843,9 @@ static const char *kind_text(int code) {
     return names[weather_kind(code)];
 }
 static const lv_image_dsc_t *kind_icon(int code) {
-    static const lv_image_dsc_t *icons[]={&weather_cloudunknown,&weather_sunny,&weather_cloudy,&weather_overcast,&weather_fog,&weather_rain,&weather_snow,&weather_thunder};
+    /* Outdoor solar phase is independent of the room low-light state. */
+    if(weather_kind(code)==1&&display_policy.sun.phase==SOLAR_NIGHT)return &weather_home_moon;
+    static const lv_image_dsc_t *icons[]={&weather_home_cloudunknown,&weather_home_sunny,&weather_home_cloudy,&weather_home_overcast,&weather_home_fog,&weather_home_rain,&weather_home_snow,&weather_home_thunder};
     return icons[weather_kind(code)];
 }
 static const lv_image_dsc_t *forecast_kind_icon(int code) {
@@ -812,6 +859,13 @@ static void weather_time(int64_t utc,int offset,const char *format,char *out,siz
 static const char *forecast_slot_text(weather_slot_state_t state){
     static const char *names[]={"日期待确认","暂无","已过期","可用"};return names[state];
 }
+static void home_weather_icon_set(const lv_image_dsc_t *src){
+    if(lv_image_get_src(weather_icon)!=src)lv_image_set_src(weather_icon,src);
+    int bottom=0;
+    for(int y=0;y<src->header.h;y++)for(int x=0;x<src->header.w;x++)
+        if(src->data[y*src->header.stride+x])bottom=y+1;
+    lv_obj_set_y(weather_icon,value_row.baseline+1-bottom);
+}
 static void render_weather(void) {
     if(!weather_value)return;
     /* Scratch is UI-owned under the existing LVGL lock, not nested task stack. */
@@ -823,22 +877,19 @@ static void render_weather(void) {
     else snprintf(text,sizeof text,"天气%s%s",w.data.current.present?" · ":"",w.data.current.present?(n.time_valid?"已过期":"待校时"):"");
     text_if_changed(weather_title,text);
     if(cv)snprintf(text,sizeof text,"%.1f°C",w.data.current.temperature_c);else snprintf(text,sizeof text,"--°C");
-    text_if_changed(weather_value,text);
+    home_reading_set(&home_weather,text);
     int current_grade=cv&&w.data.current.wind_present?weather_wind_grade(w.data.current.wind_mps):-1;
     bool current_windy=current_grade>=WEATHER_NOTICE_WIND_GRADE;
     if(current_windy)snprintf(text,sizeof text,"风%d级",current_grade);else text[0]=0;
     text_if_changed(weather_current_wind,text);lv_obj_set_hidden(weather_current_wind,!current_windy);
     lv_obj_set_hidden(weather_wind_symbol,!current_windy);lv_obj_set_hidden(weather_wind_separator,!current_windy);
     const lv_image_dsc_t *src=kind_icon(cv?w.data.current.code:999);
-    if(lv_image_get_src(weather_icon)!=src)lv_image_set_src(weather_icon,src);
-    int ink_bottom=0;
-    for(int y=0;y<48;y++)for(int x=0;x<48;x++)if(src->data[y*192+x*4+3])ink_bottom=y+1;
-    lv_obj_set_y(weather_icon,496-ink_bottom);
+    if(lv_image_get_src(weather_icon)!=src)home_weather_icon_set(src);
     char today_date[11];const weather_day_t *td=weather_day_at(&w.data,0,utc,now,n.time_valid,today_date);
     if(td)snprintf(text,sizeof text,"%s%.0f～%.0f°",w.injected?"样例 · ":"",td->low_c,td->high_c);
     else snprintf(text,sizeof text,"%s%s",w.injected?"样例 · ":"",current_windy?"--":reason[0]?reason:"今天高低温暂无");
     text_if_changed(weather_note,text);
-    int note_width=weather_text_width(text),wind_width=current_windy?weather_text_width(lv_label_get_text(weather_current_wind)):0;
+    int note_width=home_text_width(text,note_row.font),wind_width=current_windy?home_text_width(lv_label_get_text(weather_current_wind),note_row.font):0;
     int note_limit=current_windy?360-wind_width-66:360;
     lv_obj_set_width(weather_note,note_width>note_limit?note_width:note_limit);
     lv_obj_set_style_transform_scale_x(weather_note,note_width>note_limit?note_limit*256/note_width:256,0);
@@ -1038,24 +1089,22 @@ static void render(lv_timer_t *timer) {
     const lv_image_dsc_t *face=(display_policy.low_light?night_faces:faces)[display_policy.env.comfort.state];
     if(lv_image_get_src(comfort_icon)!=face){
         lv_image_set_src(comfort_icon,face);
-        unsigned bottom=0;
-        for(unsigned y=0;y<32;y++)for(unsigned x=0;x<32;x++)if(face->data[y*128+x*4+3])bottom=y+1;
-        lv_font_glyph_dsc_t glyph;
-        if(lv_font_get_glyph_dsc(note_row.font,&glyph,note_row.reference,0))
-            lv_obj_set_y(comfort_icon,note_row.baseline-glyph.ofs_y-(int)bottom);
+        home_icon_position(comfort_icon,&note_row,face,HOME_INDOOR);
     }
     static int applied_low_light=-1;
     if(applied_low_light!=(int)display_policy.low_light){
         applied_low_light=(int)display_policy.low_light;
         uint32_t ink=display_policy.low_light?0x9caebc:0xf0f3f3,muted=display_policy.low_light?0x778994:0xc4d1d8;
-        lv_obj_t *readings[]={clock_label,temperature_label,humidity_label,weather_value};
-        for(unsigned i=0;i<sizeof readings/sizeof readings[0];i++)lv_obj_set_style_text_color(readings[i],lv_color_hex(ink),0);
-        lv_obj_t *details[]={date_label,weather_title,weather_note,sensor_note};
+        lv_obj_set_style_text_color(clock_label,lv_color_hex(ink),0);
+        home_reading_color(&home_temperature,ink);home_reading_color(&home_humidity,ink);home_reading_color(&home_weather,ink);
+        lv_obj_set_style_image_recolor(weather_icon,lv_color_hex(muted),0);
+        lv_obj_set_style_image_recolor_opa(weather_icon,LV_OPA_COVER,0);
+        lv_obj_t *details[]={date_label,weather_title,weather_note,sensor_note,indoor_title,weather_current_wind,weather_wind_separator,lv_obj_get_child(alarm_summary,1)};
         for(unsigned i=0;i<sizeof details/sizeof details[0];i++)lv_obj_set_style_text_color(details[i],lv_color_hex(muted),0);
     }
     if(measurement_valid(&s.sht,now)) {
-        snprintf(text,sizeof text,"%.1f°C",s.sht.first); text_if_changed(temperature_label,text);
-        snprintf(text,sizeof text,"%.0f%%",s.sht.second); text_if_changed(humidity_label,text);
+        snprintf(text,sizeof text,"%.1f°C",s.sht.first); home_reading_set(&home_temperature,text);
+        snprintf(text,sizeof text,"%.0f%%",s.sht.second); home_reading_set(&home_humidity,text);
         static const char *reasons[]={"","偏热","偏冷","偏干","偏湿"};
         const comfort_result_t *c=&display_policy.env.comfort;
         if(c->state==COMFORT_PENDING)snprintf(text,sizeof text,"待判断");
@@ -1063,7 +1112,7 @@ static void render(lv_timer_t *timer) {
         else snprintf(text,sizeof text,"%s%s%s",reasons[c->reasons[0]],c->reason_count>1?" · ":"",c->reason_count>1?reasons[c->reasons[1]]:"");
         text_if_changed(sensor_note,text);
     } else {
-        text_if_changed(temperature_label,"--°C"); text_if_changed(humidity_label,"--%");
+        home_reading_set(&home_temperature,"--°C"); home_reading_set(&home_humidity,"--%");
         text_if_changed(sensor_note,"温湿度暂不可用");
     }
 #if CONFIG_CLOCK_DIAGNOSTICS
@@ -1072,8 +1121,8 @@ static void render(lv_timer_t *timer) {
     if(layout_sample) {
         static const char *temps[]={"","-45.0°C","130.0°C","1.0°C","--°C"};
         static const char *humidities[]={"","100%","100%","9%","--%"};
-        text_if_changed(temperature_label,temps[layout_sample]);
-        text_if_changed(humidity_label,humidities[layout_sample]);
+        home_reading_set(&home_temperature,temps[layout_sample]);
+        home_reading_set(&home_humidity,humidities[layout_sample]);
         text_if_changed(sensor_note,layout_sample==4?"温湿度暂不可用":"待判断");
     }
 #endif
@@ -1089,42 +1138,39 @@ static void create_ui(void) {
     alarm_summary=box(home,40,32,272,64,0);lv_obj_set_style_bg_opa(alarm_summary,LV_OPA_TRANSP,0);
     lv_obj_set_clickable(alarm_summary,true);lv_obj_add_event_cb(alarm_summary,clicked,LV_EVENT_CLICKED,(void *)(intptr_t)12);
     image(alarm_summary,&clock_navigation_bell,8,14);
-    label(alarm_summary,"--:--",56,10,&clock_font_28,0x9caebc);
+    label(alarm_summary,"--:--",56,7,&clock_home_font_32,0x9caebc);
     lv_obj_set_hidden(alarm_summary,true);
-    date_label=label(home,"时间尚未校准",0,40,&clock_font_28,0x778994);
+    date_label=label(home,"时间尚未校准",0,32,&clock_home_font_32,0x778994);
     lv_obj_set_width(date_label,1024); lv_obj_set_style_text_align(date_label,LV_TEXT_ALIGN_CENTER,0);
-    clock_label=label(home,"--:--",0,40,&clock_font_240,0x9caebc);
+    lv_font_glyph_dsc_t clock_zero;assert(lv_font_get_glyph_dsc(&clock_home_font_324,&clock_zero,'0',0));
+    int clock_top=104-(clock_home_font_324.line_height-clock_home_font_324.base_line)+clock_zero.box_h+clock_zero.ofs_y;
+    clock_label=label(home,"--:--",0,clock_top,&clock_home_font_324,0x9caebc);
     lv_obj_set_width(clock_label,1024); lv_obj_set_style_text_align(clock_label,LV_TEXT_ALIGN_CENTER,0);
     gear_button(home);
     wifi_setup=button(home,"设置 Wi-Fi",48,300,240,7);
-    weather_title=home_label(&title_row,"天气",HOME_LEFT,336,0x778994);
-    weather_value=home_label(&value_row,"--°C",HOME_LEFT,254,0x9caebc);
+    weather_title=home_label(&title_row,"天气",HOME_LEFT,360,0x778994);
+    weather_value=home_reading_create(&home_weather,HOME_LEFT,254,"--°C");
     weather_note=home_label(&note_row,"天气暂不可用",HOME_LEFT,360,0x778994);
-    weather_icon=image(home,&weather_cloudunknown,330,453);
+    weather_icon=image(home,&weather_home_cloudunknown,318,450);home_weather_icon_set(&weather_home_cloudunknown);
     weather_current_wind=home_label(&note_row,"",HOME_LEFT,1,0x778994);
     lv_label_set_long_mode(weather_current_wind,LV_LABEL_LONG_CLIP);lv_obj_set_hidden(weather_current_wind,true);
     weather_wind_separator=home_label(&note_row,"·",HOME_LEFT,16,0x778994);
     weather_wind_symbol=wind_symbol(home);
     lv_obj_set_hidden(weather_wind_separator,true);lv_obj_set_hidden(weather_wind_symbol,true);
-    weather_hit=box(home,40,396,365,160,0);
+    weather_hit=box(home,40,384,365,184,0);
     lv_obj_set_style_bg_opa(weather_hit,LV_OPA_TRANSP,0);lv_obj_set_clickable(weather_hit,true);
     lv_obj_add_event_cb(weather_hit,clicked,LV_EVENT_CLICKED,(void *)(intptr_t)9);
-    lv_font_glyph_dsc_t title_glyph;
-    bool title_found=lv_font_get_glyph_dsc(title_row.font,&title_glyph,title_row.reference,0);
-    assert(title_found);
-    int section_top=title_row.baseline-title_glyph.ofs_y-title_glyph.box_h;
-    int section_bottom=note_row.baseline-title_glyph.ofs_y;
-    box(home,HOME_DIVIDER,section_top,1,section_bottom-section_top,0x344653);
+    box(home,HOME_DIVIDER,390,1,172,0x344653);
     home_icon(&title_row,&clock_house_icon,HOME_INDOOR);
     int reading_x=HOME_INDOOR+HOME_ICON_SIZE+HOME_ICON_GAP;
     int humidity_x=HOME_HUMIDITY+HOME_ICON_SIZE+HOME_ICON_GAP;
-    home_label(&title_row,"室内",reading_x,HOME_RIGHT-reading_x,0x778994);
-    comfort_icon=image(home,&comfort_unknown_night,HOME_INDOOR,518);
-    sensor_note=home_label(&note_row,"待判断",HOME_INDOOR+44,HOME_RIGHT-HOME_INDOOR-44,0x778994);
+    indoor_title=home_label(&title_row,"室内",reading_x,HOME_RIGHT-reading_x,0x778994);
+    comfort_icon=home_icon(&note_row,&comfort_unknown_night,HOME_INDOOR);
+    sensor_note=home_label(&note_row,"待判断",HOME_INDOOR+48,HOME_RIGHT-HOME_INDOOR-48,0x778994);
     home_icon(&value_row,&clock_softTemp_icon,HOME_INDOOR);
-    temperature_label=home_label(&value_row,"--°C",reading_x,HOME_HUMIDITY-reading_x-HOME_ICON_GAP,0x9caebc);
+    temperature_label=home_reading_create(&home_temperature,reading_x,HOME_HUMIDITY-reading_x-HOME_ICON_GAP,"--°C");
     home_icon(&value_row,&clock_softDrop_icon,HOME_HUMIDITY);
-    humidity_label=home_label(&value_row,"--%",humidity_x,HOME_RIGHT-humidity_x,0x9caebc);
+    humidity_label=home_reading_create(&home_humidity,humidity_x,HOME_RIGHT-humidity_x,"--%");
 #if CONFIG_CLOCK_DIAGNOSTICS
     layout_sample_note=label(home,"布局样例 · 非测量",HOME_INDOOR,350,&clock_font_28,0x778994);
 #endif

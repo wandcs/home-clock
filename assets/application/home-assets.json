@@ -1,0 +1,71 @@
+{
+  "version": "N8-R4",
+  "font_source": "Noto Sans CJK SC Regular",
+  "font_source_sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+  "font_license": "SIL OFL 1.1; see OFL.txt and NotoSans-LICENSE.txt",
+  "font_url": "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+  "pillow": "12.3.0",
+  "frozen_clock_source_sha256": "01a444d077d1ca8201b1894d1ae0510ca1d31eb24c5ad5058270090bb2d7f84d",
+  "clock_method": "offline once LANCZOS resample of accepted static A8 and N7 colon, factor 1.35; no runtime scaling",
+  "weather_source_sha256": "baffafe4b71a8f99e411bc778b3c66473a58ff4f9e9442f5a1b437cc5d7437d5",
+  "weather_method": "existing native 80px A8 masks downsampled once to 60px; moon is N8 two-arc outline rasterized offline at 4x then downsampled",
+  "fonts": {
+    "324": {
+      "bitmap_bytes": 464506,
+      "glyphs": 12,
+      "clock_scale": 1.35,
+      "colon_ofs_y": 28,
+      "zero_box_height": 246,
+      "nominal_hhmm_advance": 808.6875,
+      "optical_adjustment": {
+        "glyph": "5",
+        "shift_down_px": 2,
+        "base_scaled_ofs_y": -4,
+        "final_ofs_y": -6,
+        "reason": "N8-R4 user-approved optical alignment, not a geometric positioning bug"
+      }
+    },
+    "64": {
+      "bitmap_bytes": 17792,
+      "glyphs": 11,
+      "line_height": 94,
+      "base_line": 19
+    },
+    "46": {
+      "bitmap_bytes": 9243,
+      "glyphs": 11,
+      "line_height": 68,
+      "base_line": 14
+    },
+    "34": {
+      "bitmap_bytes": 1663,
+      "glyphs": 3,
+      "line_height": 50,
+      "base_line": 10
+    },
+    "32": {
+      "bitmap_bytes": 92004,
+      "glyphs": 153,
+      "line_height": 48,
+      "base_line": 10
+    },
+    "30": {
+      "bitmap_bytes": 79387,
+      "glyphs": 150,
+      "line_height": 44,
+      "base_line": 9
+    }
+  },
+  "weather_bitmap_bytes": 32400,
+  "total_bitmap_bytes": 696995,
+  "outputs": {
+    "home_assets.c": {
+      "bytes": 1893925,
+      "sha256": "66f165bd6102896f750f43c312dea30090a7ae347a941b41aa737dc7b672763e"
+    },
+    "home_assets.h": {
+      "bytes": 497,
+      "sha256": "1f3efa9bbfa557bc521fb8af801da8878cea19df12039afd100e1b8401e02a14"
+    }
+  }
+}

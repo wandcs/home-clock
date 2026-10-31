@@ -2,7 +2,7 @@ idf_component_register(SRCS "app_main.c" "app_ui.c" "ui_memory.c" "app_state.c" 
     "location_catalog.c" "location_index/index.c" "../../assets/application/location_normalize.c"
     "../../assets/application/pinyin_dict.c"
     "../../assets/application/font_28.c" "../../assets/application/font_44.c"
-    "../../assets/application/font_240.c" "../../assets/application/font_weather_24.c" "../../assets/application/images.c"
+    "../../assets/application/font_240.c" "../../assets/application/home_assets.c" "../../assets/application/font_weather_24.c" "../../assets/application/images.c"
     "../../assets/application/weather_forecast_icons.c"
     INCLUDE_DIRS "." REQUIRES esp_driver_uart esp_driver_i2c esp_timer esp_hw_support esp_app_format
     PRIV_REQUIRES esp_wifi esp_netif esp_event lwip esp_http_client esp-tls mbedtls nvs_flash esp_driver_i2s esp_driver_gpio espressif__zlib

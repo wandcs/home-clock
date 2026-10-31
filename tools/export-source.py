@@ -20,6 +20,7 @@ FILES = {
     "firmware/sdkconfig", "firmware/sdkconfig.defaults",
     "firmware/sdkconfig.development", "firmware/toolchain-lock.json",
     "tools/build.ps1", "tools/check-build.py", "tools/check-core.py",
+    "tools/generate-home-assets.py",
     "tools/prepare-weather-contact.py", "tools/export-source.py",
     "tools/alarm-audio/generate.py", "tools/alarm-audio/synthesize.py",
     "tools/brightness-policy/test_policy.c", "tools/indoor-comfort/test.c",
@@ -28,6 +29,9 @@ FILES = {
     "docs/README.md", "docs/hardware.md", "docs/getting-started.md",
     "docs/building.md", "docs/usage.md", "docs/architecture.md",
     "docs/open-source/README.md", "docs/open-source/data-sources.md",
+    "docs/images/home.png", "docs/images/weather-scenes.png",
+    "docs/images/forecast.png", "docs/images/alarms.png",
+    "docs/images/weather-motion.gif", "docs/images/swipe.gif",
 }
 PREFIXES = (
     "firmware/main/", "firmware/features/", "firmware/core/",
@@ -35,6 +39,7 @@ PREFIXES = (
     "assets/application/", "assets/weather-background/",
     "assets/alarm-audio/", "LICENSES/",
 )
+BINARY_SUFFIXES = {".bin", ".pcm", ".lco", ".afy", ".png", ".gif"}
 PATTERNS = {
     "user directory": re.compile(r"(?i)[a-z]:[/\\]Users[/\\][^/\\\s]+"),
     "local workspace": re.compile(r"(?i)(?:[a-z]:[/\\]repos[/\\]|/mnt/[a-z]/repos/)"),
@@ -58,7 +63,11 @@ def privacy_findings(name, data):
     path = Path(name)
     # Only the known generated binary formats are excluded. Also scan files
     # without extensions, including licenses, Kconfig and ignore rules.
-    if path.suffix.lower() in {".bin", ".pcm", ".lco", ".afy"}:
+    if path.suffix.lower() in BINARY_SUFFIXES:
+        if path.suffix.lower() == ".png" and not data.startswith(b"\x89PNG\r\n\x1a\n"):
+            return [(name, "invalid PNG signature")]
+        if path.suffix.lower() == ".gif" and not data.startswith((b"GIF87a", b"GIF89a")):
+            return [(name, "invalid GIF signature")]
         return []
     try:
         text = data.decode("utf8")
@@ -108,7 +117,7 @@ def main():
         data = source.read_bytes()
         # Match the public Git attributes: source/docs use LF; checksum-bound
         # generated assets and known binary formats retain their exact bytes.
-        if not name.startswith("assets/") and source.suffix.lower() not in {".bin", ".pcm", ".lco", ".afy"}:
+        if not name.startswith("assets/") and source.suffix.lower() not in BINARY_SUFFIXES:
             try:
                 data.decode("utf8")
                 data = data.replace(b"\r\n", b"\n")

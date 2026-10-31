@@ -1,9 +1,9 @@
 {
-  "file_count": 210,
+  "file_count": 220,
   "files": {
     ".gitattributes": {
-      "bytes": 684,
-      "sha256": "a35df325162a206ed544eb6c06578ce0cc705b555281ffe3b8a705d5ad43aa86"
+      "bytes": 697,
+      "sha256": "822329da530810f19b7fb301fca5a2e7cd1b3dda77d1522792cf6d6553cc382e"
     },
     ".gitignore": {
       "bytes": 270,
@@ -46,8 +46,8 @@
       "sha256": "1e6c90014b4912815c296ee64bb6f6280af47e6d4c5d80e86232dfc5defe764c"
     },
     "README.md": {
-      "bytes": 3242,
-      "sha256": "c282b5a6e5ae635888b34519da06d29f8303e254861bce2f9f33626b2d1dfdea"
+      "bytes": 4304,
+      "sha256": "20973dad764de410d65563f280680a0beca0d6e35143dac29bf8201150c599bc"
     },
     "THIRD_PARTY_NOTICES.md": {
       "bytes": 3993,
@@ -145,6 +145,18 @@
       "bytes": 4096,
       "sha256": "6a4c20c9be7111e17338540bf1dce55f35e4cf343df54640a8a57567e89c896a"
     },
+    "assets/application/home-assets.json": {
+      "bytes": 2222,
+      "sha256": "a202a3a55226641cca28822570854af942c3616f76874cc2f8384b96ffc7b5c3"
+    },
+    "assets/application/home_assets.c": {
+      "bytes": 1893925,
+      "sha256": "66f165bd6102896f750f43c312dea30090a7ae347a941b41aa737dc7b672763e"
+    },
+    "assets/application/home_assets.h": {
+      "bytes": 497,
+      "sha256": "1f3efa9bbfa557bc521fb8af801da8878cea19df12039afd100e1b8401e02a14"
+    },
     "assets/application/house_icon.bin": {
       "bytes": 4096,
       "sha256": "00e8d7fda1a47ac8fb0534479c5a6a3bd465eb8ec3333402df826ee0d95ff5f0"
@@ -170,8 +182,8 @@
       "sha256": "0e04c9a0b4709bd20c081377c5b729d65b9b052c138bf338f05cec69424d4d5f"
     },
     "assets/application/manifest.json": {
-      "bytes": 6326,
-      "sha256": "6f01282bdc85a39841b00794e0239c29933b79bf6f7e754e3f3cb6d6f115eebc"
+      "bytes": 6709,
+      "sha256": "584b3334ea7dea536df52066f94de43dd1d5fbc34df84b48bd3b0ca3d3cb4cd4"
     },
     "assets/application/navigation_bell.h": {
       "bytes": 13248,
@@ -373,9 +385,33 @@
       "bytes": 1579,
       "sha256": "400842de633e9e60fd8f6f6ad913496d7207b5ccdeeb5e86aa62bd4beafe27a1"
     },
+    "docs/images/alarms.png": {
+      "bytes": 69614,
+      "sha256": "d23791e6516daccaa8741429d554154672551cfdbbe3e21b2e48841b30df1e26"
+    },
+    "docs/images/forecast.png": {
+      "bytes": 36411,
+      "sha256": "aab302afd617f233c71bd37fa4db745214e678b595751ab19fe540c698c91e25"
+    },
+    "docs/images/home.png": {
+      "bytes": 187506,
+      "sha256": "d2407c936f458c0e66cdba241760f6edf21717b422aad5f87b2adf85366a999b"
+    },
+    "docs/images/swipe.gif": {
+      "bytes": 3222307,
+      "sha256": "ec2bf206122adbcf365f61e05a8f4626cb92ad0a66115580c0ef0886c4fb8732"
+    },
+    "docs/images/weather-motion.gif": {
+      "bytes": 8252600,
+      "sha256": "ee466f4164c7ac206af7a0a3b753c3b209f5c1ee0f395df00d6283fe18de20c4"
+    },
+    "docs/images/weather-scenes.png": {
+      "bytes": 695831,
+      "sha256": "a1a0491a309bfc68933ab0e69a21528e949a1e786b1ae83602122cabec5b62b2"
+    },
     "docs/open-source/README.md": {
-      "bytes": 2361,
-      "sha256": "d165a283216dad8ade6daee96abe6c4d6e5fea6534bdaacd40ed7ea5cbc0fca3"
+      "bytes": 2947,
+      "sha256": "ff865fcda7d7dcee7f3b08a57a441a3255228a4ce211d9a5f40b6fa0e7eedcdd"
     },
     "docs/open-source/data-sources.md": {
       "bytes": 7593,
@@ -606,8 +642,8 @@
       "sha256": "eebfbe3e8238b5be4208f39ad9a2025a416a7e8ff2d91a6a52f6f0c7052b9f1e"
     },
     "firmware/main/CMakeLists.txt": {
-      "bytes": 5412,
-      "sha256": "c68ca43e7a6b0644d1e1ca0070228f83c31bcd0a72ca0ecd6970111e713d529d"
+      "bytes": 5453,
+      "sha256": "a36354f5f1ab26dfb41487d9815b62d432c9aa57ff4b917009e1fd690bf84560"
     },
     "firmware/main/Kconfig.projbuild": {
       "bytes": 357,
@@ -626,8 +662,8 @@
       "sha256": "74feeb7000f32011cf90d59a37550215d8d587ae503697b5a13e980fe3116b54"
     },
     "firmware/main/app_ui.c": {
-      "bytes": 94177,
-      "sha256": "7377359c736580630d0f1aabdbb438224d9cfe4f9240f3cdd591a5f361c8534f"
+      "bytes": 97076,
+      "sha256": "e28bf6cbcc727f5a4e003e95be2adec0b5601e57bca8cbe450841d9362b80f00"
     },
     "firmware/main/app_ui.h": {
       "bytes": 281,
@@ -826,8 +862,12 @@
       "sha256": "4cbdc0d4652029adda86067fa2faf42921946ac5841f19084741f9321cef004e"
     },
     "tools/export-source.py": {
-      "bytes": 6376,
-      "sha256": "3dd617a936dda45cbacbf7a1c2accc770bc1a04bfe892b08314c2fa1d5e9b2c5"
+      "bytes": 6913,
+      "sha256": "f3841ac220d90434ae576eaebc0ac3df057192f9edbca2cf9e551de48ac61fce"
+    },
+    "tools/generate-home-assets.py": {
+      "bytes": 9388,
+      "sha256": "4636762c01f0e75c2d5141d4e1216d8a07c95e1cadf58394b4fa2b688bb7cd5b"
     },
     "tools/indoor-comfort/test.c": {
       "bytes": 16940,
@@ -844,5 +884,5 @@
   },
   "privacy_check": "bounded text patterns; known binary resources excluded; other selected UTF8 text scanned; not a guarantee against every possible secret",
   "scope": "reviewed product snapshot; no Git history, local config, SDK, build outputs or device evidence",
-  "source_commit": "48fc836f62aee4d216eeb66d70e48b3a35451d82"
+  "source_commit": "0f77ef3b04f4763dbfb51bc1b06f84b91206fb37"
 }
