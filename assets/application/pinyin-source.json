@@ -1,0 +1,11 @@
+{
+  "source": "https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip",
+  "source_sha256": "f7a48b2b545acfaa77b2d607ae28747404ce02baefee16396c5d2d7a8ef34b5e",
+  "unicode_version": "17.0.0",
+  "license": "Unicode License V3",
+  "characters": 6763,
+  "syllables": 411,
+  "bytes": 34581,
+  "dictionary_sha256": "d242a77d6640b6b9a5672ba61dfef21dd675287ab1f4f9ded11924fd901bbb70",
+  "readings": "kMandarin + kHanyuPinyin; GB2312 order; v for umlaut-u; single-character composition"
+}

@@ -1,0 +1,181 @@
+{
+  "characters.txt": {
+    "bytes": 820,
+    "sha256": "4255c5db1d50a683dbe974442410202d3da2c8a3bfe806cfa7ae259a5dd09f66"
+  },
+  "Fluent-LICENSE.txt": {
+    "bytes": 1141,
+    "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+  },
+  "font_240.c": {
+    "bytes": 682626,
+    "sha256": "01a444d077d1ca8201b1894d1ae0510ca1d31eb24c5ad5058270090bb2d7f84d",
+    "format": "static A8",
+    "glyphs": 12,
+    "bitmap_bytes": 253953,
+    "bitmap_added_bytes": 126975,
+    "stride": 1,
+    "alpha": "original A4 nibble * 17 (LVGL opa4_table)",
+    "baseline_a4_source_sha256_lf": "808cc7c4b6ce9d02f06cb37b20fa7e28c439219da46a70d1435e8cfd19a00870",
+    "baseline_a4_source_sha256_windows": "b250f27895e487310a88054f936436eaa8c6076e7f1ec7c94f8926235bc0979e",
+    "baseline_a4_bitmap_sha256": "46dcf9eac1d05814a880f7578980ef644c2064c7b71e37f1500f88b07825193c",
+    "baseline_normalization": "Restore only colon ofs_y to -3 before checking the historical A4 source",
+    "colon_rise_px": 24,
+    "colon_original_ofs_y": -3,
+    "colon_ofs_y": 21
+  },
+  "font_28.c": {
+    "bytes": 8130578,
+    "sha256": "d0881cdd96ee79b0b9ea3ed43c4c540ca482b167a215fe07481c42c099b50ffd"
+  },
+  "font_44.c": {
+    "bytes": 723613,
+    "sha256": "34a57c22f84780b9d56a1ce074914f64c7b6f2005903fb86ce16573d3e7f3810"
+  },
+  "gear_icon.bin": {
+    "bytes": 4096,
+    "sha256": "6a4c20c9be7111e17338540bf1dce55f35e4cf343df54640a8a57567e89c896a"
+  },
+  "house_icon.bin": {
+    "bytes": 4096,
+    "sha256": "00e8d7fda1a47ac8fb0534479c5a6a3bd465eb8ec3333402df826ee0d95ff5f0"
+  },
+  "images.c": {
+    "bytes": 2953,
+    "sha256": "3c91fcb745dc7f74987593555ee4acb91df2a17e53f072bf1af63e29423b9d4e"
+  },
+  "OFL.txt": {
+    "bytes": 4301,
+    "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+  },
+  "pinyin-source.json": {
+    "bytes": 488,
+    "sha256": "87227255dd9727bf1678bdaa8ac7e5c5bba651bb9ef46d30079736e4c7bcf037"
+  },
+  "pinyin_dict.c": {
+    "bytes": 34581,
+    "sha256": "d242a77d6640b6b9a5672ba61dfef21dd675287ab1f4f9ded11924fd901bbb70"
+  },
+  "softDrop_icon.bin": {
+    "bytes": 4096,
+    "sha256": "3bf5f0724b7df5789e8761e5ba0626d27f42f1339cddef878b580317e2c9bc9d"
+  },
+  "softTemp_icon.bin": {
+    "bytes": 4096,
+    "sha256": "f0db6ced1836bfcca5aae0018832da3c7af3d9c9d07e6cb44ff970bd0592931d"
+  },
+  "Unicode-LICENSE.txt": {
+    "bytes": 1995,
+    "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96"
+  },
+  "weather_cloudunknown.bin": {
+    "bytes": 9216,
+    "sha256": "c6ef35fa47650fb6eb0b60acafacde94292f0454988d347d22da23e95d673f96"
+  },
+  "weather_cloudunknown.svg": {
+    "bytes": 318,
+    "sha256": "c91d29aefb09b8b9da5c921c7537d37f1a5e98c7c03525900b7256695b3c5667"
+  },
+  "weather_cloudy.bin": {
+    "bytes": 9216,
+    "sha256": "eeff211bb62eada0b075a0b976ab25926612b40ca37171119321a1c538a3e4f2"
+  },
+  "weather_cloudy.svg": {
+    "bytes": 294,
+    "sha256": "335e471d7ba95ca8f3a5200d1a8f0d19bc5a8a7b5a233fb535c66895d5d91790"
+  },
+  "weather_fog.bin": {
+    "bytes": 9216,
+    "sha256": "5eb7a6c9458ac4ea41fa408821e857c7641f38396de14e238feaf6a448738006"
+  },
+  "weather_fog.svg": {
+    "bytes": 268,
+    "sha256": "b8a372cbb122a3986384d94fe499fe06aad080f83456f45ad7301366e2db4624"
+  },
+  "weather_overcast.bin": {
+    "bytes": 9216,
+    "sha256": "7220a51f96ba13cfcc3065460a79f1b890786bda555448db7ee9ec352740909d"
+  },
+  "weather_overcast.svg": {
+    "bytes": 290,
+    "sha256": "fc56f30c77bce92710bf426944f3eb4f53103d3d7507c0fe9de6ede5546aff84"
+  },
+  "weather_rain.bin": {
+    "bytes": 9216,
+    "sha256": "0b03ddd59737af03e015de7428b56505762436206008db28ff22420c7f925535"
+  },
+  "weather_rain.svg": {
+    "bytes": 288,
+    "sha256": "f382ec2b8605bfdefbdb151e25206c745656403834db9f6c1deefe16b67ddfa6"
+  },
+  "weather_snow.bin": {
+    "bytes": 9216,
+    "sha256": "7e9abef2bd89e06ebc610b2b519b8b3363ae9f5ddad5ee41bdf3ba872c1d1876"
+  },
+  "weather_snow.svg": {
+    "bytes": 342,
+    "sha256": "57f57377a2392c516bf6cc91642305da6c94e131c8c45b9cd839128a90f9090b"
+  },
+  "weather_sunny.bin": {
+    "bytes": 9216,
+    "sha256": "bd358b2e59d2b2dd979ed79fa9f93999f3f2b4d7ec3db1fb9cc4dfbf50266daa"
+  },
+  "weather_sunny.svg": {
+    "bytes": 313,
+    "sha256": "276e82e22c7e39bae2c5555b7cc90befa7e0d00ba447d4ad4189f281e09774d6"
+  },
+  "weather_thunder.bin": {
+    "bytes": 9216,
+    "sha256": "af868864accbd1a124ede9a9ed17e4fc3fa8bf52b5b4487ebe456341a65f7546"
+  },
+  "weather_thunder.svg": {
+    "bytes": 291,
+    "sha256": "67a0af84ee04c032dfd7991ae1268830f8404656137c30e5e1c5c47f7f548205"
+  },
+  "source": {
+    "font_sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+    "font_url": "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+    "pillow": "12.3.0",
+    "icons": "B2 exact binaries from R6 geometry; see README",
+    "location_r6": "R5-20261020:0e04c9a0b4709bd20c081377c5b729d65b9b052c138bf338f05cec69424d4d5f"
+  },
+  "locations.lco": {
+    "bytes": 1357525,
+    "sha256": "0e04c9a0b4709bd20c081377c5b729d65b9b052c138bf338f05cec69424d4d5f"
+  },
+  "location_metadata.bin": {
+    "bytes": 355582,
+    "sha256": "1d102ec715c634ebf5665a08aa1d8341fca52a5f25a79d9e4199823ef79d39b1"
+  },
+  "location_normalize.c": {
+    "bytes": 144801,
+    "sha256": "8ed70d88f0b82e3bed731b51a4ca0199d1e84e405a7d0a80728037681558e179"
+  },
+  "NotoSans-LICENSE.txt": {
+    "bytes": 4377,
+    "sha256": "0dab92d0544f7b233403f14b84a663bdbfa746982eda629e7f4f9ffe1b036feb"
+  },
+  "Location-OGDL.txt": {
+    "bytes": 13565,
+    "sha256": "23fcd7ebe84ece8f191e05580a576899f1e111abcd0b09df65a489c866a12873"
+  },
+  "Location-NOTICE.txt": {
+    "bytes": 764,
+    "sha256": "2ebb0feb774a17594f3b0d8014c9ae8a3ec5fd70e782c257a8913d74e65904d6"
+  },
+  "location-catalog.json": {
+    "bytes": 1481853,
+    "sha256": "90cc59a9383c0a070c9d312233f9b47f0797a5a7b30e13f30922300354414543"
+  },
+  "font_weather_24.c": {
+    "bytes": 2881,
+    "sha256": "6427f5e3c4b9587b309f107e01954fb9339ccebf00709499c343a528f7360cd1",
+    "glyphs": 3,
+    "characters": "\u2014\u5f3a\u7ea7",
+    "bitmap_bytes": 636,
+    "source_sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+    "pillow": "12.3.0",
+    "generator": "tools/generate-weather-small-font.py",
+    "fallback": "lv_font_montserrat_24"
+  }
+}

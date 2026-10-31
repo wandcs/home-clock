@@ -1,0 +1,31 @@
+* text=auto eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
+*.sh text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.py text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.lock text eol=lf
+*.txt text eol=lf
+*.svg text eol=lf
+LICENSE text eol=lf
+*.bin binary
+*.lco binary
+*.pcm binary
+*.afy binary
+*.png binary
+*.jpg binary
+*.webm binary
+*.ttf binary
+*.otf binary
+
+# Generated assets are checksum-bound; preserve their exact historical bytes.
+assets/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+firmware/sdkconfig text eol=lf
+firmware/sdkconfig.defaults text eol=lf
+firmware/sdkconfig.development text eol=lf
+**/Kconfig* text eol=lf

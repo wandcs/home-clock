@@ -1,0 +1,63 @@
+{
+  "repository": "https://github.com/microsoft/fluentui-emoji",
+  "commit": "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+  "license": "MIT",
+  "licenseFile": "LICENSE",
+  "assets": [
+    {
+      "state": "comfortable",
+      "family": "Smiling face with smiling eyes",
+      "path": "assets/Smiling face with smiling eyes/Flat/smiling_face_with_smiling_eyes_flat.svg",
+      "file": "smiling_face_with_smiling_eyes_flat.svg",
+      "url": "https://github.com/microsoft/fluentui-emoji/blob/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Smiling%20face%20with%20smiling%20eyes/Flat/smiling_face_with_smiling_eyes_flat.svg",
+      "sha256": "4a429b15f9aa2831f2fe786923751b6d59b099fabff39a4e41003267629cda25",
+      "changes": "Archived original SVG bytes unchanged; R6 derivative changes recorded separately in ../comfort/derivatives.json."
+    },
+    {
+      "state": "hot",
+      "family": "Hot face",
+      "path": "assets/Hot face/Flat/hot_face_flat.svg",
+      "file": "hot_face_flat.svg",
+      "url": "https://github.com/microsoft/fluentui-emoji/blob/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Hot%20face/Flat/hot_face_flat.svg",
+      "sha256": "cf84b609f46ffc13211d634fe061c59952f46c4f2e3298bddb38fbee3372107e",
+      "changes": "Archived original SVG bytes unchanged; R6 derivative changes recorded separately in ../comfort/derivatives.json."
+    },
+    {
+      "state": "cold",
+      "family": "Cold face",
+      "path": "assets/Cold face/Flat/cold_face_flat.svg",
+      "file": "cold_face_flat.svg",
+      "url": "https://github.com/microsoft/fluentui-emoji/blob/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Cold%20face/Flat/cold_face_flat.svg",
+      "sha256": "3bf1c839f72b7b525c710df4bb1213bfac0e95b45ea4b8d8ae77b4595e9339d2",
+      "changes": "Archived original SVG bytes unchanged; R6 derivative changes recorded separately in ../comfort/derivatives.json."
+    },
+    {
+      "state": "dry",
+      "family": "Face with open mouth",
+      "path": "assets/Face with open mouth/Flat/face_with_open_mouth_flat.svg",
+      "file": "face_with_open_mouth_flat.svg",
+      "url": "https://github.com/microsoft/fluentui-emoji/blob/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Face%20with%20open%20mouth/Flat/face_with_open_mouth_flat.svg",
+      "sha256": "4b54df2d22c097e621694f7e300f87b01bfbac6a3c3775a891399686d1400aac",
+      "changes": "Archived original SVG bytes unchanged; R6 derivative changes recorded separately in ../comfort/derivatives.json."
+    },
+    {
+      "state": "humid",
+      "family": "Downcast face with sweat",
+      "path": "assets/Downcast face with sweat/Flat/downcast_face_with_sweat_flat.svg",
+      "file": "downcast_face_with_sweat_flat.svg",
+      "url": "https://github.com/microsoft/fluentui-emoji/blob/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Downcast%20face%20with%20sweat/Flat/downcast_face_with_sweat_flat.svg",
+      "sha256": "693e3016097c507230816b12d95f4fa048bd2cc6c5393e23fbf30830321ef241",
+      "changes": "Archived original SVG bytes unchanged; R6 derivative changes recorded separately in ../comfort/derivatives.json."
+    },
+    {
+      "state": "unknown",
+      "family": "Confused face",
+      "path": "assets/Confused face/Flat/confused_face_flat.svg",
+      "file": "confused_face_flat.svg",
+      "url": "https://github.com/microsoft/fluentui-emoji/blob/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Confused%20face/Flat/confused_face_flat.svg",
+      "sha256": "b765316ea9e12151291c47b02b8c4231659aa9eef01e1be5167d22ca5c30d566",
+      "changes": "Archived original SVG bytes unchanged; R6 derivative changes recorded separately in ../comfort/derivatives.json."
+    }
+  ],
+  "role": "Archived upstream originals for provenance only; runtime uses R6 simplified derivatives and native muted palettes, not these original multicolor images."
+}

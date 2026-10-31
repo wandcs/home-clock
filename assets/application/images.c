@@ -1,0 +1,25 @@
+#include "lvgl.h"
+extern const uint8_t _binary_gear_icon_bin_start[];
+const lv_image_dsc_t clock_gear_icon={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=32,.h=32,.stride=128},.data_size=4096,.data=_binary_gear_icon_bin_start};
+extern const uint8_t _binary_house_icon_bin_start[];
+const lv_image_dsc_t clock_house_icon={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=32,.h=32,.stride=128},.data_size=4096,.data=_binary_house_icon_bin_start};
+extern const uint8_t _binary_softTemp_icon_bin_start[];
+const lv_image_dsc_t clock_softTemp_icon={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=32,.h=32,.stride=128},.data_size=4096,.data=_binary_softTemp_icon_bin_start};
+extern const uint8_t _binary_softDrop_icon_bin_start[];
+const lv_image_dsc_t clock_softDrop_icon={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=32,.h=32,.stride=128},.data_size=4096,.data=_binary_softDrop_icon_bin_start};
+extern const uint8_t _binary_weather_cloudunknown_bin_start[];
+const lv_image_dsc_t weather_cloudunknown={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_cloudunknown_bin_start};
+extern const uint8_t _binary_weather_sunny_bin_start[];
+const lv_image_dsc_t weather_sunny={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_sunny_bin_start};
+extern const uint8_t _binary_weather_cloudy_bin_start[];
+const lv_image_dsc_t weather_cloudy={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_cloudy_bin_start};
+extern const uint8_t _binary_weather_overcast_bin_start[];
+const lv_image_dsc_t weather_overcast={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_overcast_bin_start};
+extern const uint8_t _binary_weather_fog_bin_start[];
+const lv_image_dsc_t weather_fog={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_fog_bin_start};
+extern const uint8_t _binary_weather_rain_bin_start[];
+const lv_image_dsc_t weather_rain={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_rain_bin_start};
+extern const uint8_t _binary_weather_snow_bin_start[];
+const lv_image_dsc_t weather_snow={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_snow_bin_start};
+extern const uint8_t _binary_weather_thunder_bin_start[];
+const lv_image_dsc_t weather_thunder={.header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,.w=48,.h=48,.stride=192},.data_size=9216,.data=_binary_weather_thunder_bin_start};

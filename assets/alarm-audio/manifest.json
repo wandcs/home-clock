@@ -1,0 +1,15 @@
+{
+  "version": "S16-fuller-three-tone-1",
+  "status": "user-tested-prototype",
+  "source": "original mathematical synthesis",
+  "license": "Original synthesis under the project MIT License; no third-party samples",
+  "format": "mono 22050Hz s16le",
+  "frames": 88200,
+  "bytes": 176400,
+  "pcm_sha256": "c9513920643c49a8251f98b980d4c812b9a779013e7de1cfc91520a3b7e43688",
+  "generator_sha256_lf": "bd5210659f06e76ded31b3fd2a8a5c1eec5d12ebba6a3f75279900dffbd25aca",
+  "spec_sha256_lf": "2bd7090749474dfaef3965e2fb9c2ccfa7a9aacbab3ba8e00a57e89502fb6550",
+  "peak": 26214,
+  "calibration_K": null,
+  "reference_wav_sha256": "332c73ff1ae4465be74ff68ef1a6ecc3e26349cab553287244dc832a53a04b93"
+}

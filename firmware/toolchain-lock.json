@@ -1,0 +1,116 @@
+{
+  "sdk": "ESP-IDF v6.1",
+  "sdk_commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+  "sdk_archive_sha256": "cdeea7db47b90064ef185b2a1f1b33d17bcb13469a9f8cc20e06c4c4cdb4cc16",
+  "tools_manifest_sha256": "039337e5ee2511f97d112aedb98125945625a4dd9ffb67e0cbb094edcdd298b2",
+  "constraints_sha256": "05da14bf613fb10b80698c227f29a6c824796af595c37bc553889ef74e3df7ac",
+  "host_python": "3.12.10",
+  "sdk_python_packages": [
+    "annotated-types==0.8.0",
+    "boolean.py==5.0",
+    "certifi==2026.7.22",
+    "cffi==2.1.1",
+    "charset-normalizer==3.5.2",
+    "click==8.4.2",
+    "colorama==0.4.6",
+    "construct==2.10.70",
+    "cryptography==48.0.1",
+    "esp-coredump==1.17.2",
+    "esp-idf-diag==0.2.0",
+    "esp-idf-kconfig==3.14.0",
+    "esp-idf-monitor==1.10.0",
+    "esp-idf-sbom==1.4.0",
+    "esp-idf-size==2.3.2",
+    "esp-pylib==1.2.0",
+    "esp_idf_nvs_partition_gen==0.1.9",
+    "esp_idf_panic_decoder==1.5.0",
+    "esptool==5.6.0",
+    "freertos-gdb==1.0.4",
+    "idf-component-manager==3.1.2",
+    "idf-drivers-gdb==0.1.1",
+    "idna==3.20",
+    "intelhex==2.3.0",
+    "jsonref==1.1.0",
+    "license-expression==30.4.4",
+    "linkify-it-py==2.2.0",
+    "markdown-it-py==4.2.0",
+    "mdit-py-plugins==0.6.1",
+    "mdurl==0.1.2",
+    "packaging==26.3",
+    "pathvalidate==3.3.1",
+    "pip==26.2.1",
+    "platformdirs==4.13.4",
+    "psutil==7.2.2",
+    "pyclang==0.7.0",
+    "pycparser==3.11",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.0",
+    "pydantic_core==2.50.1",
+    "pyelftools==0.33",
+    "pygdbmi==0.11.0.0",
+    "Pygments==2.21.0",
+    "pyparsing==3.3.3",
+    "pyserial==3.5",
+    "python-dotenv==1.2.4",
+    "PyYAML==6.0.3",
+    "reedsolo==1.7.0",
+    "requests==2.34.2",
+    "requests-file==3.0.1",
+    "requests-toolbelt==1.0.0",
+    "rich==15.0.0",
+    "rich-click==1.9.9",
+    "ruamel.yaml==0.19.1",
+    "schema==0.7.8",
+    "setuptools==84.0.0",
+    "textual==8.2.8",
+    "tree-sitter==0.26.0",
+    "tree-sitter-c==0.24.2",
+    "truststore==0.10.5",
+    "typing-inspection==0.4.4",
+    "typing_extensions==4.16.0",
+    "urllib3==2.8.0",
+    "websockets==17.2"
+  ],
+  "installed_tools": {
+    "ccache": [
+      "4.12.1"
+    ],
+    "cmake": [
+      "4.0.3"
+    ],
+    "esp-clangd": [
+      "esp-21.1.3_20260408"
+    ],
+    "esp-rom-elfs": [
+      "20241011"
+    ],
+    "idf-exe": [
+      "1.0.3"
+    ],
+    "ninja": [
+      "1.12.1"
+    ],
+    "openocd-esp32": [
+      "v0.12.0-esp32-20260703"
+    ],
+    "riscv32-esp-elf": [
+      "esp-15.2.0_20251204"
+    ],
+    "riscv32-esp-elf-gdb": [
+      "17.1_20260402"
+    ]
+  },
+  "device_tools": {
+    "esptool": "5.6.0",
+    "pyserial": "3.5"
+  },
+  "source_status": "Official full-source archive; Windows core.filemode/autocrlf false in new SDK and submodules; git status clean",
+  "tool_path": {
+    "installed": ".local/idf-tools-v6.1",
+    "compiler_alias": ".local/rv61",
+    "alias_type": "Windows junction",
+    "target": "tools/riscv32-esp-elf/esp-15.2.0_20251204/riscv32-esp-elf",
+    "reason": "Keep GCC expanded multilib paths and standard header filenames below Windows file-open limit; cstdlib/string/vector/iostream syntax test passes with identical compiler and flags"
+  },
+  "active_build_compiler": "riscv32-esp-elf-gcc"
+}

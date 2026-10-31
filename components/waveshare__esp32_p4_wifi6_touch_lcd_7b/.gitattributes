@@ -1,0 +1,7 @@
+# Preserve published package bytes so UPSTREAM.json hashes survive checkout.
+* -text
+# Keep the published Kconfig's four trailing-space lines intact.
+Kconfig whitespace=-blank-at-eol
+.gitattributes text eol=lf
+COMPATIBILITY.md text eol=lf
+UPSTREAM.json text eol=lf

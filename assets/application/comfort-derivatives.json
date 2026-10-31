@@ -1,0 +1,57 @@
+{
+  "upstream": "https://github.com/microsoft/fluentui-emoji",
+  "commit": "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+  "license": "../fluent-original/LICENSE",
+  "notice": "Copyright (c) Microsoft Corporation. R6 derivative changes by home-clock project, 2026-10-18.",
+  "assets": [
+    {
+      "state": "comfortable",
+      "sourceFile": "../fluent-original/smiling_face_with_smiling_eyes_flat.svg",
+      "sourceSha256": "4a429b15f9aa2831f2fe786923751b6d59b099fabff39a4e41003267629cda25",
+      "derivedFile": "comfortable.svg",
+      "derivedSha256LF": "7f28f06a122f7d07e07383d384d8ba7772a10022a41da52cd5b33f414cb7fb29",
+      "change": "Reused Fluent rounded head; smile eyes/mouth converted to thin rounded strokes; subtle cheek ticks; removed saturated face/cheek fills."
+    },
+    {
+      "state": "hot",
+      "sourceFile": "../fluent-original/hot_face_flat.svg",
+      "sourceSha256": "cf84b609f46ffc13211d634fe061c59952f46c4f2e3298bddb38fbee3372107e",
+      "derivedFile": "hot.svg",
+      "derivedSha256LF": "71078601b00073fb1416ff0064c48ff6d6b9011d92ab4e9851bd43bf5c411f98",
+      "change": "Restored Fluent weary open-eye/brow proportions and distinct protruding tongue; muted warm forehead and rose tongue; one cool sweat drop; thin rounded contour replaces multicolor silhouette."
+    },
+    {
+      "state": "cold",
+      "sourceFile": "../fluent-original/cold_face_flat.svg",
+      "sourceSha256": "3bf1c839f72b7b525c710df4bb1213bfac0e95b45ea4b8d8ae77b4595e9339d2",
+      "derivedFile": "cold.svg",
+      "derivedSha256LF": "d2885222bcee9f6c36af7241e8f60c94864763fc5ab3e0d3507463df1ad6e5da",
+      "change": "Retained original icicle contour cues and concerned open-eye proportions; angular clenched mouth with two flat tooth bands, no oval grid; icy blue wash and fine shiver marks."
+    },
+    {
+      "state": "dry",
+      "sourceFile": "../fluent-original/face_with_open_mouth_flat.svg",
+      "sourceSha256": "4b54df2d22c097e621694f7e300f87b01bfbac6a3c3775a891399686d1400aac",
+      "derivedFile": "dry.svg",
+      "derivedSha256LF": "5e2b2f743992d4c9c7b4f5fe02440b15e0e762638f5d0099843bcce91fec7557",
+      "change": "Retained original round eyes and vertical open mouth; fine warm lip marks instead of saturated yellow/pink fills."
+    },
+    {
+      "state": "humid",
+      "sourceFile": "../fluent-original/downcast_face_with_sweat_flat.svg",
+      "sourceSha256": "693e3016097c507230816b12d95f4fa048bd2cc6c5393e23fbf30830321ef241",
+      "derivedFile": "humid.svg",
+      "derivedSha256LF": "cab4e78788c1589123318acd11c2aa9a2000c1e147820b8b7bd5e5ff0d4aca5e",
+      "change": "Retained closed downcast eyes and downward mouth; two restrained blue sweat drops; no open eyes, warm forehead or tongue."
+    },
+    {
+      "state": "unknown",
+      "sourceFile": "../fluent-original/confused_face_flat.svg",
+      "sourceSha256": "b765316ea9e12151291c47b02b8c4231659aa9eef01e1be5167d22ca5c30d566",
+      "derivedFile": "unknown.svg",
+      "derivedSha256LF": "10ae766f081aefea1c4e8684d239b748a734728a643ff9942111c70acb9be558",
+      "change": "Retained open eyes and asymmetric doubtful mouth; added fine asymmetric brows; removed original vivid face fill."
+    }
+  ],
+  "revision": "User review rejected first coarse monochrome hot/humid similarity and cold grid-mouth. Revised with finer curves, restored eye/mouth detail and restrained warm/ice/water accents."
+}

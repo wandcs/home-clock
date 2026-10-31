@@ -1,0 +1,40 @@
+{
+  "version": "S16-fuller-three-tone-1",
+  "status": "user-tested-prototype",
+  "sample_rate": 22050,
+  "channels": 1,
+  "sample_width_bytes": 2,
+  "period_seconds": 4.0,
+  "note_onsets_seconds": [
+    0.0,
+    0.9,
+    1.8
+  ],
+  "note_frequencies_hz": [
+    523.251130601,
+    659.255113826,
+    783.990871963
+  ],
+  "note_seconds": 0.8,
+  "attack_seconds": 0.04,
+  "decay_tau_seconds": 0.45,
+  "release_seconds": 0.16,
+  "harmonic_weights": [
+    1.0,
+    0.18,
+    0.04
+  ],
+  "reference_peak_fs": 0.8,
+  "gain_start_db": -24.0,
+  "gain_max_db": -6.0,
+  "rise_seconds": 30.0,
+  "stop_fade_seconds": 0.02,
+  "codec_calibration": "codec reference 100; acoustic loudness/distortion not calibrated; device listening pending",
+  "source": "original mathematical synthesis; no third-party audio or melody sample",
+  "outputs": [
+    "reference-4s.wav",
+    "rise-40s.wav",
+    "stop-restart-16s.wav"
+  ],
+  "reference_wav_sha256": "332c73ff1ae4465be74ff68ef1a6ecc3e26349cab553287244dc832a53a04b93"
+}

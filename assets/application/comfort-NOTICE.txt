@@ -1,0 +1,5 @@
+Comfort icons are derivatives of Microsoft Fluent UI Emoji (MIT). Copyright (c) Microsoft Corporation.
+Modified by this project: reviewed A3-R6 geometry, restrained day/lowlight palette, rasterized 32x32 ARGB8888 for firmware.
+Original sources and source hashes: comfort-sources.json.
+Derivative mapping: comfort-derivatives.json; project-wide license record: THIRD_PARTY_NOTICES.md.
+Full MIT license: comfort-LICENSE.txt.

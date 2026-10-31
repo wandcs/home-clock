@@ -1,0 +1,6 @@
+Location subset R5, reviewed 2026-10-20. Not a certification of worldwide completeness or house-level weather.
+GeoNames, CC BY4.0: https://www.geonames.org/ https://creativecommons.org/licenses/by/4.0/
+Wikidata structured data, CC0: https://www.wikidata.org/wiki/Wikidata:Licensing
+Taiwan Ministry of Interior Department of Land Administration, 2026 Taiwan administrative-place names, dataset40281; OGDL1.0: https://data.gov.tw/dataset/40281 https://data.gov.tw/license
+Local curation, simplified display, selected points and spelling/alias/format transformations. Full source versions and representative-point restrictions: docs/research/f3-r5-location-coverage.
+Noto Sans CJK SC and Noto Sans Regular subset glyphs, SIL OFL1.1: OFL.txt and NotoSans-LICENSE.txt.

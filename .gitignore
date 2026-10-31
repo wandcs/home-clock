@@ -1,0 +1,14 @@
+# Local credentials, machine configuration and investigation output
+/.local/
+# Local development Wi-Fi credential file; never include in evidence.
+/wifi.txt
+.env
+.env.*
+!.env.example
+
+# Generated build and Python files
+build/
+.venv/
+__pycache__/
+*.py[cod]
+sdkconfig.old

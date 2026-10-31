@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "grid": [
+    256,
+    150
+  ],
+  "output": [
+    1024,
+    600
+  ],
+  "fields_bytes": 1200384,
+  "particle_bytes": 7344,
+  "sha256": "c7d9881dd88afcefba5756c3403326ce88f2e7c9c0ba73e84305b7dc764a7dea",
+  "entries": {
+    "sun": {
+      "offset": 0,
+      "bytes": 115200,
+      "shape": [
+        150,
+        256,
+        3
+      ],
+      "type": "uint8_t"
+    },
+    "solar_gain": {
+      "offset": 115200,
+      "bytes": 38400,
+      "shape": [
+        150,
+        256
+      ],
+      "type": "uint8_t"
+    },
+    "polar": {
+      "offset": 153600,
+      "bytes": 153600,
+      "shape": [
+        150,
+        256,
+        2
+      ],
+      "type": "uint16_t"
+    },
+    "lobes": {
+      "offset": 307200,
+      "bytes": 196608,
+      "shape": [
+        6,
+        64,
+        512
+      ],
+      "type": "uint8_t"
+    },
+    "cloud_field": {
+      "offset": 503808,
+      "bytes": 49152,
+      "shape": [
+        128,
+        128,
+        3
+      ],
+      "type": "uint8_t"
+    },
+    "air": {
+      "offset": 552960,
+      "bytes": 16384,
+      "shape": [
+        128,
+        128
+      ],
+      "type": "uint8_t"
+    },
+    "cloud_sky": {
+      "offset": 569344,
+      "bytes": 115200,
+      "shape": [
+        150,
+        256,
+        3
+      ],
+      "type": "uint8_t"
+    },
+    "banks": {
+      "offset": 684544,
+      "bytes": 163840,
+      "shape": [
+        4,
+        80,
+        128,
+        4
+      ],
+      "type": "uint8_t"
+    },
+    "moon_clear": {
+      "offset": 848384,
+      "bytes": 115200,
+      "shape": [
+        150,
+        256,
+        3
+      ],
+      "type": "uint8_t"
+    },
+    "moon_cloud": {
+      "offset": 963584,
+      "bytes": 115200,
+      "shape": [
+        150,
+        256,
+        3
+      ],
+      "type": "uint8_t"
+    },
+    "moon_patch": {
+      "offset": 1078784,
+      "bytes": 38400,
+      "shape": [
+        2,
+        80,
+        80,
+        3
+      ],
+      "type": "uint8_t"
+    },
+    "moon_patch_alpha": {
+      "offset": 1117184,
+      "bytes": 6400,
+      "shape": [
+        80,
+        80
+      ],
+      "type": "uint8_t"
+    },
+    "particle_quiet": {
+      "offset": 1123584,
+      "bytes": 38400,
+      "shape": [
+        150,
+        256
+      ],
+      "type": "uint8_t"
+    },
+    "exposure": {
+      "offset": 1161984,
+      "bytes": 38400,
+      "shape": [
+        150,
+        256
+      ],
+      "type": "uint8_t"
+    }
+  },
+  "solar_contribution": 0.82,
+  "source_sha256": {
+    "docs/design/A3-R6/atmosphere.js": "650f76a57981aa2a70276607bb661ac6cc4cee133946a55c2d1e18c403405133",
+    "docs/design/A3-R7/atmosphere.js": "c8d314dd3f872eea0307f85009545be6d64ce4c7056049d9c6c9c9d215742d17",
+    "docs/design/A3-R8/atmosphere.js": "57aa98eccc1b5249f480584f4170033a68b01cee0003a5fed49d1da413673066",
+    "tools/prepare-display-assets.cjs": "f9fab141b835a77f7c7e661e32c2d53cbbd6ba8a852d16117da0cd6049714013",
+    "tools/convert-display-assets.py": "c056bdaf463c719b718d85448ac434e3e937b53f313d6b65a0a13b4ffc9c624b",
+    "tools/weather-background/generate.py": "6ca1502effd875b91feb95655c59b616e5c909fd59977f6dfdc9fdf5dba5d4ec"
+  },
+  "port_differences": [
+    "numpy float64 hash noise differs from GPU float32 noise",
+    "frozen baked microtexture with advected sampling; cloud silhouette layers move independently",
+    "bounded periodic overcast field replaces per-frame five-octave GPU domain warp",
+    "sun six polar lobes retain distinct centers/widths/fades and runtime spin/weights; static material plus advected air",
+    "256x150 RGB8 work grid, high-resolution moon patch, bilinear output and final Bayer RGB565 quantization"
+  ],
+  "generator": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0"
+  }
+}

@@ -1,0 +1,5 @@
+*.bin binary
+# These generated files are checksum-bound; retain their exact resource bytes.
+*.c -text
+*.h -text
+*.json -text

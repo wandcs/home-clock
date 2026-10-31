@@ -1,0 +1,123 @@
+{
+  "source": "R6 reviewed derivative SVG, same geometry/day and lowlight tokens",
+  "license": "comfort-LICENSE.txt",
+  "notice": "comfort-NOTICE.txt",
+  "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+  "sharp": {
+    "aom": "3.15.1",
+    "archive": "3.8.9",
+    "cairo": "1.18.6",
+    "cgif": "0.5.4",
+    "exif": "0.6.26",
+    "expat": "2.8.5",
+    "ffi": "3.8.0",
+    "fontconfig": "2.18.3",
+    "freetype": "2.14.3",
+    "fribidi": "1.0.17",
+    "glib": "2.90.0",
+    "harfbuzz": "14.5.0",
+    "heif": "1.23.5",
+    "highway": "1.4.0",
+    "imagequant": "2.4.1",
+    "lcms": "2.19.1",
+    "mozjpeg": "0826579",
+    "pango": "1.58.2",
+    "pixman": "0.46.4",
+    "png": "1.6.58",
+    "proxy-libintl": "0.5",
+    "rsvg": "2.63.2",
+    "tiff": "4.7.2",
+    "uhdr": "2.0.2",
+    "vips": "8.18.7",
+    "webp": "1.6.0",
+    "xml2": "2.15.4",
+    "zlib-ng": "2.3.3",
+    "sharp": "0.35.5"
+  },
+  "images": [
+    {
+      "name": "comfort_unknown",
+      "source": "docs/design/A3-R6/assets/comfort/unknown.svg",
+      "source_sha256": "d81a93e5fb4f928b53eafc0263f17601fdb3627a971052f29fe4f1ed51a9cee3",
+      "pixels_sha256": "d2e3e4e32ac368bd81634bb7a922811893a70adfd729e161d2878ccaa0d66737",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_comfortable",
+      "source": "docs/design/A3-R6/assets/comfort/comfortable.svg",
+      "source_sha256": "eefdc50cd830697eb0c10695da1655a05a21cf1c1d9d21a0e5079530eee1673a",
+      "pixels_sha256": "416c1c1dc23605e825bc586d7c7d601d2ba40142c54d253147d7069e068b6953",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_hot",
+      "source": "docs/design/A3-R6/assets/comfort/hot.svg",
+      "source_sha256": "01ad45c579c5fe1ab29da26bc42cba9f1287cb6377c5957aa3d9268962eda523",
+      "pixels_sha256": "c20bddd51829885696b9d2fb250f89df634ddabb51f05b2b029674f64ab6ce43",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_cold",
+      "source": "docs/design/A3-R6/assets/comfort/cold.svg",
+      "source_sha256": "9876ce740c247cb9075cedfe9132e452c432d937238636372cd349495cadab13",
+      "pixels_sha256": "6c36f0bc00184b828082b06c066e5900e4b9ffdd12d621cd7c05213fa80483a8",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_dry",
+      "source": "docs/design/A3-R6/assets/comfort/dry.svg",
+      "source_sha256": "e07eccf4872041eb422db2d483a2a6076dcf908efec76793a946234fca1a54e4",
+      "pixels_sha256": "5262bd5ae99b9ef17ec54934210c959287d8e60501a6f2c4619b06de7e7e2719",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_humid",
+      "source": "docs/design/A3-R6/assets/comfort/humid.svg",
+      "source_sha256": "11bde4b53638994f78a076a78ae787cb882625bf6aa698f2f1ae8ac2832e40a7",
+      "pixels_sha256": "9531c3ae778d0cd6a5581a9d458fade2e71b873510ae852cf82890547395b43e",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_unknown_night",
+      "source": "docs/design/A3-R6/assets/comfort/unknown.svg",
+      "source_sha256": "d81a93e5fb4f928b53eafc0263f17601fdb3627a971052f29fe4f1ed51a9cee3",
+      "pixels_sha256": "a87067f8faa53f026d4065f3bb571f984d6c1f69f390c4c391990058af813105",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_comfortable_night",
+      "source": "docs/design/A3-R6/assets/comfort/comfortable.svg",
+      "source_sha256": "eefdc50cd830697eb0c10695da1655a05a21cf1c1d9d21a0e5079530eee1673a",
+      "pixels_sha256": "6917b639e5dbf73c760b1003d8ca7fda5883ec1e0e9cc6fffb22d7e9f1d26b9c",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_hot_night",
+      "source": "docs/design/A3-R6/assets/comfort/hot.svg",
+      "source_sha256": "01ad45c579c5fe1ab29da26bc42cba9f1287cb6377c5957aa3d9268962eda523",
+      "pixels_sha256": "f05c3440dd8e6ddd093cc46fb4b674e81d8a2be6342c646d3289cfe0b5d8e6da",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_cold_night",
+      "source": "docs/design/A3-R6/assets/comfort/cold.svg",
+      "source_sha256": "9876ce740c247cb9075cedfe9132e452c432d937238636372cd349495cadab13",
+      "pixels_sha256": "da4f748077a8b5e464bade76d14baf0f9ca1b4938e433225a11e71a5085be287",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_dry_night",
+      "source": "docs/design/A3-R6/assets/comfort/dry.svg",
+      "source_sha256": "e07eccf4872041eb422db2d483a2a6076dcf908efec76793a946234fca1a54e4",
+      "pixels_sha256": "33a852c95b7e905efb9f361b2b85408db5694b3a5e1eb4604007364feb70a1c2",
+      "bytes": 4096
+    },
+    {
+      "name": "comfort_humid_night",
+      "source": "docs/design/A3-R6/assets/comfort/humid.svg",
+      "source_sha256": "11bde4b53638994f78a076a78ae787cb882625bf6aa698f2f1ae8ac2832e40a7",
+      "pixels_sha256": "3cfe8dc1d8ed7c10856b23e24afbafd2489895ba81fc71e7871eb0672df5c9a0",
+      "bytes": 4096
+    }
+  ]
+}

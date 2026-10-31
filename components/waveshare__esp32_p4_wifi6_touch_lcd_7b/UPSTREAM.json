@@ -1,0 +1,56 @@
+{
+  "upstream": "waveshare/esp32_p4_wifi6_touch_lcd_7b 3.0.1",
+  "commit": "d7567970be6d6a94077727eb69d580d63a898eab",
+  "archive_sha256": "4a67d9bdb2964dee98d8aa0c6d5b2ad7236e024314b6ef2813bb4e4a7a3d1934",
+  "archive_url": "https://components.espressif.com/api/downloads/?object_id=f8dbd39c-9fb7-46db-881a-a2550951f487&object_type=component",
+  "files": {
+    "CMakeLists.txt": {
+      "upstream_sha256": "76bc7b8c8d85964eb9dabc1f9a667a19cf14107c42e2a349326c747c2e1f73b8",
+      "local_sha256": "76bc7b8c8d85964eb9dabc1f9a667a19cf14107c42e2a349326c747c2e1f73b8"
+    },
+    "esp32_p4_wifi6_touch_lcd_7b.c": {
+      "upstream_sha256": "5beee7df9078450bb465388c1e8cc3e1b3909b478671cdcd40f4d465af66832e",
+      "local_sha256": "5beee7df9078450bb465388c1e8cc3e1b3909b478671cdcd40f4d465af66832e"
+    },
+    "idf_component.yml": {
+      "upstream_sha256": "44ffbaa386ce79dde65e3f2f06a8a02d12fb68fb331968418b16cb03efd23a93",
+      "local_sha256": "66eb894b111c8f1e9c23feb07d443889d949316573fc2f2d5ec9674db2768007"
+    },
+    "include/bsp/config.h": {
+      "upstream_sha256": "dfa1dd9ebc75bf38925424dec865680fa69aa415bf5b5817d756b82e0bc1f4ef",
+      "local_sha256": "dfa1dd9ebc75bf38925424dec865680fa69aa415bf5b5817d756b82e0bc1f4ef"
+    },
+    "include/bsp/display.h": {
+      "upstream_sha256": "d1e6711aed9907f282f66e16f12409d5ab6292db5afb96642bda4ec39d0b89f8",
+      "local_sha256": "d1e6711aed9907f282f66e16f12409d5ab6292db5afb96642bda4ec39d0b89f8"
+    },
+    "include/bsp/esp-bsp.h": {
+      "upstream_sha256": "e1afcaa0826182f3c634135ac318f8f440bb0a54350ab8d89b2526d32dcfc8b8",
+      "local_sha256": "e1afcaa0826182f3c634135ac318f8f440bb0a54350ab8d89b2526d32dcfc8b8"
+    },
+    "include/bsp/esp32_p4_wifi6_touch_lcd_7b.h": {
+      "upstream_sha256": "4f470c89c01e9ba78d3b28444d8c0142dcfbbcde846ff6fb382dc0057db0897f",
+      "local_sha256": "4f470c89c01e9ba78d3b28444d8c0142dcfbbcde846ff6fb382dc0057db0897f"
+    },
+    "include/bsp/touch.h": {
+      "upstream_sha256": "83d200a78722e462dc143f93310d0123618942de498e1e3abf051ea6c6eaecd5",
+      "local_sha256": "83d200a78722e462dc143f93310d0123618942de498e1e3abf051ea6c6eaecd5"
+    },
+    "Kconfig": {
+      "upstream_sha256": "e9299a57f9a27a49777a6c74e4d3c3fc36e4927c3f8f359e5b19d6febbec5649",
+      "local_sha256": "e9299a57f9a27a49777a6c74e4d3c3fc36e4927c3f8f359e5b19d6febbec5649"
+    },
+    "LICENSE": {
+      "upstream_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "local_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "priv_include/bsp_err_check.h": {
+      "upstream_sha256": "1641bf04cb10e8ab64d4cf66972bb9648c2ac6fc92b7fd71e4391f0fd45d1995",
+      "local_sha256": "1641bf04cb10e8ab64d4cf66972bb9648c2ac6fc92b7fd71e4391f0fd45d1995"
+    },
+    "README.md": {
+      "upstream_sha256": "d7d147d1d9920f024e3dcceff7140a62e9c0282e28ce89f8f3379ae8330162ea",
+      "local_sha256": "d7d147d1d9920f024e3dcceff7140a62e9c0282e28ce89f8f3379ae8330162ea"
+    }
+  }
+}

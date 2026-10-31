@@ -1,0 +1,9 @@
+menu "Home clock development"
+config CLOCK_DIAGNOSTICS
+    bool "Enable local UART development controls"
+    default n
+    help
+        Development build only. Enables virtual input, sensor failure/staleness
+        injection, backlight and LVGL tree snapshots on the physical UART.
+        No network control endpoint. Disable for a product build.
+endmenu
