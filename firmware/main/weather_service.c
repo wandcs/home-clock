@@ -52,6 +52,8 @@ typedef struct {
 } met_cache_t;
 static met_cache_t *met_cache; /* Weather worker only; location changes use generation. */
 static uint32_t met_requests;
+static air_quality_cache_t air_cache; /* Worker-owned six-hour representation. */
+static uint32_t air_generation;
 extern const uint8_t _binary_weather_met_contact_bin_start[] __attribute__((weak));
 extern const uint8_t _binary_weather_met_contact_bin_end[] __attribute__((weak));
 static const char *met_contact(void) {
@@ -73,7 +75,8 @@ static bool set_location(double lat,double lon,const char *timezone,bool test) {
     if(!mutex||!weather_url(lat,lon,timezone,checked,sizeof checked))return false;
     xSemaphoreTake(mutex,portMAX_DELAY);
     uint32_t generation=state.generation+1; uint32_t discarded=state.discarded;
-    state=(weather_state_t){.configured=true,.development_test=test,.latitude=lat,.longitude=lon,.generation=generation,.error=WX_OK,.discarded=discarded};
+    uint64_t air_due=state.air_quality_next_due_ms;
+    state=(weather_state_t){.configured=true,.development_test=test,.latitude=lat,.longitude=lon,.generation=generation,.error=WX_OK,.discarded=discarded,.air_quality_error=WX_UNCONFIGURED,.air_quality_next_due_ms=air_due};
     strcpy(state.requested_timezone,timezone);
     weather_schedule_location(&schedule,true,generation,app_uptime());
 #if CONFIG_CLOCK_DIAGNOSTICS
@@ -86,7 +89,8 @@ void weather_clear_location(void) {
     if(!mutex) return;
     xSemaphoreTake(mutex,portMAX_DELAY);
     uint32_t generation=state.generation+1; uint32_t discarded=state.discarded;
-    state=(weather_state_t){.generation=generation,.error=WX_UNCONFIGURED,.discarded=discarded};
+    uint64_t air_due=state.air_quality_next_due_ms;
+    state=(weather_state_t){.generation=generation,.error=WX_UNCONFIGURED,.discarded=discarded,.air_quality_error=WX_UNCONFIGURED,.air_quality_next_due_ms=air_due};
     weather_schedule_location(&schedule,false,generation,app_uptime());
 #if CONFIG_CLOCK_DIAGNOSTICS
     next_fault=0;sample_saved=false;
@@ -457,7 +461,55 @@ static bool met_select(int64_t utc,uint64_t ms,weather_current_t *out) {
     out->provider=WX_PROVIDER_MET;out->model_updated_utc=met_cache->forecast.model_updated_utc;
     return weather_current_valid(out,utc,ms,true);
 }
-static weather_error_t met_fetch(job_t job,weather_current_t *out,int *status,int *transport,int *bytes,bool *cached) {
+static bool met_collect(int64_t utc,uint64_t ms,int offset_s,weather_data_t *out) {
+    memset(out,0,sizeof *out);
+    bool current=met_select(utc,ms,&out->current);unsigned days=0;
+    if(met_cache&&met_cache->complete&&offset_s!=MET_OFFSET_UNKNOWN&&met_cache->forecast.offset_s==offset_s)
+        days=met_forecast_select_days(&met_cache->forecast,utc,met_cache->fetched_utc,met_cache->fetched_ms,out->days);
+    return current||days;
+}
+static bool met_covered(int64_t utc,int offset_s,bool need_current,bool need_days) {
+    if(!met_cache||!met_cache->complete)return false;
+    if(need_current){weather_current_t c;if(!met_forecast_select(&met_cache->forecast,utc,utc,app_uptime(),&c))return false;}
+    if(need_days){
+        if(offset_s==MET_OFFSET_UNKNOWN||met_cache->forecast.offset_s!=offset_s)return false;
+        int64_t first=(utc+offset_s)/86400*86400-offset_s,end=first+WEATHER_DAYS*86400LL;
+        if(met_cache->forecast.days_begin_utc>first||met_cache->forecast.days_end_utc<end||met_cache->forecast.series_last_utc<end)return false;
+    }
+    return true;
+}
+static int job_offset(job_t job,weather_data_t *data) {
+    if(data->timezone[0])return data->offset_s;
+    int offset=MET_OFFSET_UNKNOWN;
+    xSemaphoreTake(mutex,portMAX_DELAY);
+    if(job.generation==state.generation&&state.data.timezone[0]){
+        memcpy(data->timezone,state.data.timezone,sizeof data->timezone);
+        memcpy(data->abbreviation,state.data.abbreviation,sizeof data->abbreviation);
+        data->offset_s=state.data.offset_s;offset=data->offset_s;
+        data->grid_present=state.data.grid_present;data->grid_latitude=state.data.grid_latitude;data->grid_longitude=state.data.grid_longitude;
+    }
+    xSemaphoreGive(mutex);
+    if(offset==MET_OFFSET_UNKNOWN&&!strcmp(job.timezone,"Asia/Shanghai")){
+        strcpy(data->timezone,"Asia/Shanghai");strcpy(data->abbreviation,"CST");data->offset_s=28800;offset=28800;
+    }
+    return offset;
+}
+static unsigned backup_days_merge(weather_data_t *data,const weather_data_t *backup,int64_t utc,uint64_t ms) {
+    if(!data->timezone[0])return 0;
+    weather_day_t combined[WEATHER_DAYS]={0};unsigned used=0;
+    for(int i=0;i<WEATHER_DAYS;i++){
+        char date[11];const weather_day_t *primary=weather_day_at(data,i,utc,ms,true,date);
+        if(primary)combined[i]=*primary;
+        else{
+            memcpy(combined[i].date,date,sizeof date);
+            for(int j=0;j<WEATHER_DAYS;j++)if(!strcmp(backup->days[j].date,date)&&weather_day_valid(&backup->days[j],utc,ms,true)){
+                combined[i]=backup->days[j];used++;break;
+            }
+        }
+    }
+    memcpy(data->days,combined,sizeof combined);return used;
+}
+static weather_error_t met_fetch(job_t job,weather_data_t *out,int offset_s,bool need_current,bool need_days,int *status,int *transport,int *bytes,bool *cached) {
     *status=*transport=*bytes=0;*cached=false;
     if(!met_contact()||!met_cache)return WX_UNCONFIGURED;
     met_reset_generation(job.generation);
@@ -468,7 +520,7 @@ static weather_error_t met_fetch(job_t job,weather_current_t *out,int *status,in
     }
     int64_t utc=app_utc_us()/1000000;uint64_t now=app_uptime();
     if(utc<met_cache->not_before_utc) {
-        *cached=met_select(utc,now,out);
+        *cached=met_collect(utc,now,offset_s,out);
         return *cached?WX_OK:WX_HTTP;
     }
     met_response_t *r=heap_caps_calloc(1,sizeof *r,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
@@ -478,7 +530,7 @@ static weather_error_t met_fetch(job_t job,weather_current_t *out,int *status,in
     char url[WEATHER_URL_BYTES];
     /* MET explicitly requires truncation, not rounding, to four decimals. */
     double lat=lat_e4/10000.0,lon=lon_e4/10000.0;
-    snprintf(url,sizeof url,"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f",lat,lon);
+    snprintf(url,sizeof url,"https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=%.4f&lon=%.4f",lat,lon);
     uint64_t started=app_uptime();weather_error_t result=WX_TRANSPORT;
     for(int redirect=0;redirect<2;redirect++) {
         char *body=r->body;memset(r,0,sizeof *r);r->body=body;r->started=started;
@@ -489,13 +541,9 @@ static weather_error_t met_fetch(job_t job,weather_current_t *out,int *status,in
         if(client) {
             bool headers=esp_http_client_set_header(client,"User-Agent",met_contact())==ESP_OK&&
                 esp_http_client_set_header(client,"Accept-Encoding","gzip")==ESP_OK;
-            bool covered=false;
-            for(size_t i=0;met_cache->complete&&i<met_cache->forecast.count;i++) {
-                int64_t point=met_cache->forecast.points[i].source_utc;
-                if(utc>=point&&utc-point<3600){covered=true;break;}
-            }
-            /* A 304 cannot refill an exhausted 24-hour subset. In that case
-             * obtain a whole representation at the next permitted cycle. */
+            /* A 304 must cover the requested current AND local seven-day
+             * window. Missing past hours of today cannot be recovered by 200. */
+            bool covered=met_covered(utc,offset_s,need_current,need_days);
             if(headers&&covered&&met_cache->modified[0])headers=esp_http_client_set_header(client,"If-Modified-Since",met_cache->modified)==ESP_OK;
             if(headers) {
                 met_requests++;
@@ -523,40 +571,85 @@ static weather_error_t met_fetch(job_t job,weather_current_t *out,int *status,in
         else if(!complete)result=WX_TRUNCATED;
         else if((*status==301||*status==302||*status==307||*status==308)&&redirect==0&&met_redirect(r->location,url,sizeof url))continue;
         else if(*status==304) {
-            if(met_cache->complete) {
-                weather_current_t selected;
-                if(met_forecast_select(&met_cache->forecast,utc,utc,app_uptime(),&selected)) {
-                    met_cache->fetched_utc=utc;met_cache->fetched_ms=app_uptime();
-                    met_cache->not_before_utc=http_date(r->expires);
-                    if(http_date(r->modified))memcpy(met_cache->modified,r->modified,sizeof met_cache->modified);
-                    result=met_select(utc,app_uptime(),out)?WX_OK:WX_SCHEMA;
-                } else result=WX_SCHEMA;
-            } else result=WX_SCHEMA;
+            if(met_covered(utc,offset_s,need_current,need_days)) {
+                met_cache->fetched_utc=utc;met_cache->fetched_ms=app_uptime();
+                if(http_date(r->modified))memcpy(met_cache->modified,r->modified,sizeof met_cache->modified);
+                result=met_collect(utc,app_uptime(),offset_s,out)?WX_OK:WX_SCHEMA;
+            }else result=WX_SCHEMA;
         } else if(*status!=200) {
             result=WX_HTTP;
         } else if(r->gzip&&!r->zend)result=WX_TRUNCATED;
         else {
-            result=met_forecast_parse(r->body,r->used,utc,&r->parsed);
-            weather_current_t selected;
-            if(result==WX_OK&&!met_forecast_select(&r->parsed,utc,utc,app_uptime(),&selected))result=WX_SCHEMA;
+            result=met_forecast_parse(r->body,r->used,utc,offset_s,&r->parsed);
             if(result==WX_OK) {
                 met_cache->forecast=r->parsed;met_cache->complete=true;
                 met_cache->fetched_utc=utc;met_cache->fetched_ms=app_uptime();
                 met_cache->not_before_utc=http_date(r->expires);
                 if(http_date(r->modified))memcpy(met_cache->modified,r->modified,sizeof met_cache->modified);
                 else met_cache->modified[0]=0;
-                result=met_select(utc,app_uptime(),out)?WX_OK:WX_SCHEMA;
+                result=met_collect(utc,app_uptime(),offset_s,out)?WX_OK:WX_SCHEMA;
             }
         }
         break;
     }
     free(r->body);free(r);return result;
 }
+static weather_error_t air_fetch(job_t job,air_quality_cache_t *out,int *status,int *transport,int *bytes) {
+    char url[AIR_QUALITY_URL_BYTES];if(!air_quality_url(job.latitude,job.longitude,url,sizeof url))return WX_SCHEMA;
+    body_t b={.body=heap_caps_calloc(AIR_QUALITY_BODY_LIMIT+1,1,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT),.started=app_uptime()};
+    if(!b.body){*transport=ESP_ERR_NO_MEM;return WX_TRANSPORT;}
+    _Static_assert(AIR_QUALITY_BODY_LIMIT==WEATHER_BODY_LIMIT,"shared bounded body handler");
+    esp_http_client_config_t cfg={.url=url,.timeout_ms=4000,.crt_bundle_attach=esp_crt_bundle_attach,
+        .skip_cert_common_name_check=false,.disable_auto_redirect=true,.buffer_size=1024,.buffer_size_tx=768,
+        .event_handler=event,.user_data=&b,.is_async=true};
+    esp_http_client_handle_t client=esp_http_client_init(&cfg);esp_err_t error=ESP_ERR_NO_MEM;
+    if(client&&esp_http_client_set_header(client,"Accept-Encoding","identity")==ESP_OK)do{
+        if(app_uptime()-b.started>25000){b.deadline=true;error=ESP_ERR_TIMEOUT;break;}
+        error=esp_http_client_perform(client);if(error==ESP_ERR_HTTP_EAGAIN)vTaskDelay(pdMS_TO_TICKS(20));
+    }while(error==ESP_ERR_HTTP_EAGAIN&&!b.deadline&&!b.oversized);
+    *status=client?esp_http_client_get_status_code(client):0;*transport=error;*bytes=(int)b.used;
+    bool complete=client&&esp_http_client_is_complete_data_received(client);
+    if(client)esp_http_client_cleanup(client);
+    weather_error_t result=b.oversized?WX_TOO_LARGE:b.deadline||error==ESP_ERR_TIMEOUT||error==ESP_ERR_HTTP_EAGAIN||error==ESP_ERR_HTTP_READ_TIMEOUT?WX_TIMEOUT:
+        error==ESP_ERR_HTTP_INCOMPLETE_DATA||error==ESP_ERR_HTTP_CONNECTION_CLOSED?WX_TRUNCATED:error!=ESP_OK?WX_TRANSPORT:*status!=200?WX_HTTP:!complete?WX_TRUNCATED:WX_OK;
+    if(result==WX_OK)result=app_network_read().time_valid?air_quality_parse(b.body,b.used,app_utc_us()/1000000,app_uptime(),out):WX_CLOCK;
+    free(b.body);return result;
+}
+static void air_refresh(job_t job) {
+    /* Diagnostic outcome injections do not cause unrelated real requests. */
+    if(job.fault)return;
+    network_state_t net=app_network_read();uint64_t now=app_uptime();
+    xSemaphoreTake(mutex,portMAX_DELAY);
+    bool due=net.connected&&net.time_valid&&job.generation==state.generation&&now>=state.air_quality_next_due_ms;
+    xSemaphoreGive(mutex);
+    if(!due||!weather_http_take(0))return;
+    xSemaphoreTake(mutex,portMAX_DELAY);
+    now=app_uptime();due=job.generation==state.generation&&now>=state.air_quality_next_due_ms;
+    if(due){state.air_quality_attempts++;state.air_quality_attempted_ms=now;state.air_quality_next_due_ms=now+AIR_QUALITY_REFRESH_MS;state.air_quality_fetching=true;}
+    xSemaphoreGive(mutex);
+    if(!due){weather_http_give();return;}
+    air_quality_cache_t fresh={0};int http=0,transport=0,bytes=0;
+    weather_error_t result=air_fetch(job,&fresh,&http,&transport,&bytes);
+    weather_http_give(); /* No state/UI lock held while TLS is live. */
+    xSemaphoreTake(mutex,portMAX_DELAY);
+    bool accepted=job.generation==state.generation;
+    if(accepted){
+        state.air_quality_fetching=false;state.air_quality_finished_ms=app_uptime();state.air_quality_http=http;
+        state.air_quality_transport=transport;state.air_quality_bytes=bytes;state.air_quality_error=result;
+        if(result==WX_OK||result==WX_PARTIAL){air_cache=fresh;air_generation=job.generation;state.air_quality_successes++;}
+        air_quality_select(&air_cache,app_utc_us()/1000000,app_uptime(),app_network_read().time_valid,&state.air_quality);
+    }
+    xSemaphoreGive(mutex);
+    printf("{\"event\":\"air_quality_attempt\",\"generation\":%"PRIu32",\"accepted\":%s,\"http\":%d,\"transport_error\":%d,\"bytes\":%d,\"result\":\"%s\",\"model\":\"CAMS global\",\"index\":\"US AQI\",\"stack_free_bytes\":%u}\n",
+        job.generation,accepted?"true":"false",http,transport,bytes,weather_error_name(result),(unsigned)uxTaskGetStackHighWaterMark(NULL));
+}
 static void service(void *unused) {
     (void)unused; job_t job;
     for(;;) {
         network_state_t net=app_network_read();
         xSemaphoreTake(mutex,portMAX_DELAY);
+        if(air_generation!=state.generation){memset(&air_cache,0,sizeof air_cache);air_generation=state.generation;}
+        air_quality_select(&air_cache,app_utc_us()/1000000,app_uptime(),net.time_valid,&state.air_quality);
         /* Select a forecast hour already received, without a new HTTP request
          * or a new fetched timestamp when the clock crosses an hour. */
         if(met_cache&&met_cache->generation==state.generation&&!state.injected&&
@@ -585,7 +678,7 @@ static void service(void *unused) {
         if(!claimed) { vTaskDelay(pdMS_TO_TICKS(250)); continue; }
         weather_data_t data={0}; int http=0,transport=0,bytes=0;
         weather_error_t result,primary_error=WX_UNCONFIGURED,backup_error=WX_UNCONFIGURED;
-        int primary_http=0,backup_http=0;bool backup_cached=false,backup_attempted=false;
+        int primary_http=0,backup_http=0;bool backup_cached=false,backup_attempted=false;unsigned backup_days=0;
         uint32_t requests_before=met_requests;
         xSemaphoreTake(mutex,portMAX_DELAY);
         bool current=job.generation==state.generation;
@@ -610,21 +703,26 @@ static void service(void *unused) {
                     else result=fetch(job,&data,&http,&transport,&bytes);
                     primary_error=result;primary_http=http;
                     int64_t utc=app_utc_us()/1000000;uint64_t ms=app_uptime();
+                    int offset_s=job_offset(job,&data);
                     bool current_valid=weather_current_valid(&data.current,utc,ms,true);
-                    if(!current_valid) {
-                        data.current.present=false;
+                    if(!current_valid)data.current.present=false;
+                    weather_forecast_t summary;weather_forecast_summary(&data,utc,ms,true,&summary);
+                    bool need_days=summary.usable_count<WEATHER_DAYS;
+                    if(!current_valid||need_days){
                         xSemaphoreTake(mutex,portMAX_DELAY);current=job.generation==state.generation;xSemaphoreGive(mutex);
-                        if(current&&met_contact()&&met_cache) {
-                            weather_current_t selected;
-                            backup_error=met_fetch(job,&selected,&backup_http,&transport,&bytes,&backup_cached);
-                            backup_attempted=met_requests!=requests_before;
-                            http=backup_http;
-                            if(backup_error==WX_OK&&weather_current_valid(&selected,app_utc_us()/1000000,app_uptime(),true)) {
-                                data.current=selected;current_valid=true;
-                            }
+                        if(current&&met_contact()&&met_cache){
+                            weather_data_t selected={0};
+                            backup_error=met_fetch(job,&selected,offset_s,!current_valid,need_days,&backup_http,&transport,&bytes,&backup_cached);
+                            backup_attempted=met_requests!=requests_before;http=backup_http;
+                            utc=app_utc_us()/1000000;ms=app_uptime();
+                            if(!current_valid&&weather_current_valid(&selected.current,utc,ms,true)){data.current=selected.current;current_valid=true;}
+                            backup_days=backup_days_merge(&data,&selected,utc,ms);
                         }
                     }
-                    weather_forecast_t summary;weather_forecast_summary(&data,app_utc_us()/1000000,app_uptime(),true,&summary);
+                    utc=app_utc_us()/1000000;ms=app_uptime();
+                    current_valid=weather_current_valid(&data.current,utc,ms,true);
+                    if(!current_valid)data.current.present=false;
+                    weather_forecast_summary(&data,utc,ms,true,&summary);
                     if(current_valid||summary.usable_count)result=current_valid&&summary.usable_count==7?WX_OK:WX_PARTIAL;
                     else if(backup_attempted||backup_cached)result=backup_error;
                     else if(result==WX_OK||result==WX_PARTIAL)result=WX_SCHEMA;
@@ -642,6 +740,7 @@ static void service(void *unused) {
             state.primary_http=primary_http;state.backup_http=backup_http;
             state.primary_error=primary_error;state.backup_error=backup_error;
             state.backup_attempted=backup_attempted;state.backup_cached=backup_cached;state.primary_injected=job.fault==6;
+            state.backup_days=backup_days;if(backup_days)state.backup_daily_successes++;
             if(result==WX_OK || result==WX_PARTIAL) {
                 if(!data.timezone[0]&&!state.data.timezone[0]&&!strcmp(job.timezone,"Asia/Shanghai")) {
                     strcpy(data.timezone,"Asia/Shanghai");strcpy(data.abbreviation,"CST");data.offset_s=28800;
@@ -654,13 +753,14 @@ static void service(void *unused) {
         } else state.discarded++;
         xSemaphoreGive(mutex);
         flockfile(stdout);
-        printf("{\"event\":\"weather_attempt\",\"generation\":%"PRIu32",\"development_test\":%s,\"injected\":%s,\"primary_injected\":%s,\"primary_http\":%d,\"primary_result\":\"%s\",\"backup_http\":%d,\"backup_result\":\"%s\",\"backup_attempted\":%s,\"backup_cached\":%s,\"current_source\":\"%s\",\"direct_device_https\":%s,\"certificate_bundle\":true,\"hostname_and_dates_verified\":%s,\"http_status\":%d,\"transport_error\":%d,\"bytes\":%d,\"result\":\"%s\",\"uptime_ms\":%"PRIu64"}\n",
+        printf("{\"event\":\"weather_attempt\",\"generation\":%"PRIu32",\"development_test\":%s,\"injected\":%s,\"primary_injected\":%s,\"primary_http\":%d,\"primary_result\":\"%s\",\"backup_http\":%d,\"backup_result\":\"%s\",\"backup_attempted\":%s,\"backup_cached\":%s,\"backup_days\":%u,\"stack_free_bytes\":%u,\"current_source\":\"%s\",\"direct_device_https\":%s,\"certificate_bundle\":true,\"hostname_and_dates_verified\":%s,\"http_status\":%d,\"transport_error\":%d,\"bytes\":%d,\"result\":\"%s\",\"uptime_ms\":%"PRIu64"}\n",
             job.generation,job.test?"true":"false",job.fault&&job.fault!=6?"true":"false",job.fault==6?"true":"false",
             primary_http,weather_error_name(primary_error),backup_http,weather_error_name(backup_error),
-            backup_attempted?"true":"false",backup_cached?"true":"false",weather_provider_name(current_provider),
+            backup_attempted?"true":"false",backup_cached?"true":"false",backup_days,(unsigned)uxTaskGetStackHighWaterMark(NULL),weather_provider_name(current_provider),
             ((primary_http>0&&job.fault==0)||backup_attempted)?"true":"false",((primary_http>0&&job.fault==0)||backup_http>0)?"true":"false",
             http,transport,bytes,weather_error_name(result),app_uptime());
         funlockfile(stdout);
+        air_refresh(job); /* Weather outcome is published and its TLS released first. */
     }
 }
 void weather_status(void) {
@@ -674,16 +774,20 @@ void weather_status(void) {
     printf(",\"weather\":{\"source\":\"%s\",\"model_data\":true,\"configured\":%s,\"development_test\":%s,\"fetching\":%s,\"generation\":%"PRIu32",\"attempts\":%"PRIu32",\"successes\":%"PRIu32",\"discarded\":%"PRIu32",\"error\":\"%s\",\"http\":%d,\"bytes\":%d,\"timezone\":\"%s\",\"abbreviation\":\"%s\",\"offset_s\":%d,\"today\":\"%s\",\"grid_latitude\":%.4f,\"grid_longitude\":%.4f",
         weather_provider_name(w.data.current.provider),w.configured?"true":"false",w.development_test?"true":"false",w.fetching?"true":"false",w.generation,w.attempts,w.successes,w.discarded,weather_error_name(w.error),w.http_status,w.bytes,disclose?w.data.timezone:"",disclose?w.data.abbreviation:"",disclose?w.data.offset_s:0,disclose?today:"",disclose?w.data.grid_latitude:0,disclose?w.data.grid_longitude:0);
     printf(",\"grid_present\":%s,\"grid_source\":\"%s\",\"primary_http\":%d,\"primary_result\":\"%s\",\"backup_configured\":%s,\"backup_http\":%d,\"backup_result\":\"%s\",\"backup_attempted\":%s,\"backup_cached\":%s,\"primary_injected\":%s",w.data.grid_present?"true":"false",w.data.grid_present?"Open-Meteo":"unknown",w.primary_http,weather_error_name(w.primary_error),w.backup_configured?"true":"false",w.backup_http,weather_error_name(w.backup_error),w.backup_attempted?"true":"false",w.backup_cached?"true":"false",w.primary_injected?"true":"false");
+    printf(",\"backup_days\":%u,\"backup_daily_successes\":%"PRIu32,w.backup_days,w.backup_daily_successes);
     if(w.development_test) printf(",\"test_location\":\"Shanghai-public-development-test\",\"latitude\":%.4f,\"longitude\":%.4f",w.latitude,w.longitude);
     weather_current_t *c=&w.data.current;
     printf(",\"issued\":%"PRIu32",\"next_due_ms\":%"PRIu64",\"consecutive_failures\":%u,\"injected\":%s",w.issued,w.next_due_ms,w.failures,w.injected?"true":"false");
-    printf(",\"current\":{\"source\":\"%s\",\"model_updated_utc\":%"PRId64",\"present\":%s,\"valid\":%s,\"code\":%d,\"kind\":\"%s\",\"temperature_c\":%.2f,\"source_utc\":%"PRId64",\"interval_s\":%d,\"fetched_utc\":%"PRId64",\"fetched_ms\":%"PRIu64",\"wind_present\":%s,\"wind_mps\":%.3f,\"wind_grade\":%d},\"daily\":[",
-        weather_provider_name(c->provider),c->model_updated_utc,c->present?"true":"false",weather_current_valid(c,utc,ms,n.time_valid)?"true":"false",c->code,c->present?weather_kind_name(c->code):"unknown",c->temperature_c,c->source_utc,c->interval_s,c->fetched_utc,c->fetched_ms,c->wind_present?"true":"false",c->wind_mps,c->wind_present?weather_wind_grade(c->wind_mps):-1);
+    printf(",\"current\":{\"source\":\"%s\",\"model_updated_utc\":%"PRId64",\"present\":%s,\"valid\":%s,\"code\":%d,\"kind\":\"%s\",\"temperature_c\":%.2f,\"source_utc\":%"PRId64",\"interval_s\":%d,\"fetched_utc\":%"PRId64",\"fetched_ms\":%"PRIu64",\"wind_present\":%s,\"wind_mps\":%.3f,\"wind_grade\":%d,\"gust_present\":%s,\"gust_mps\":%.3f},\"daily\":[",
+        weather_provider_name(c->provider),c->model_updated_utc,c->present?"true":"false",weather_current_valid(c,utc,ms,n.time_valid)?"true":"false",c->code,c->present?weather_kind_name(c->code):"unknown",c->temperature_c,c->source_utc,c->interval_s,c->fetched_utc,c->fetched_ms,c->wind_present?"true":"false",c->wind_mps,c->wind_present?weather_wind_grade(c->wind_mps):-1,c->gust_present?"true":"false",c->gust_mps);
     for(int i=0;i<7;i++) { weather_day_t *d=&w.data.days[i];
         bool date_ok=today[0] && strcmp(d->date,today)>=0;
-        printf("%s{\"date\":\"%s\",\"source\":\"%s\",\"present\":%s,\"valid\":%s,\"today\":%s,\"code\":%d,\"kind\":\"%s\",\"high_c\":%.2f,\"low_c\":%.2f,\"precipitation_present\":%s,\"precipitation_pct\":%.2f,\"fetched_utc\":%"PRId64",\"wind_present\":%s,\"wind_mps\":%.3f,\"wind_grade\":%d,\"uv_present\":%s,\"uv_index\":%.2f}",i?",":"",d->date,weather_provider_name(d->provider),d->present?"true":"false",date_ok&&weather_day_valid(d,utc,ms,n.time_valid)?"true":"false",d->present&&today[0]&&strcmp(d->date,today)==0?"true":"false",d->code,d->present?weather_kind_name(d->code):"unknown",d->high_c,d->low_c,d->precipitation_present?"true":"false",d->precipitation_pct,d->fetched_utc,d->wind_present?"true":"false",d->wind_mps,d->wind_present?weather_wind_grade(d->wind_mps):-1,d->uv_present?"true":"false",d->uv_index);
+        printf("%s{\"date\":\"%s\",\"source\":\"%s\",\"present\":%s,\"valid\":%s,\"today\":%s,\"code\":%d,\"kind\":\"%s\",\"high_c\":%.2f,\"low_c\":%.2f,\"precipitation_present\":%s,\"precipitation_pct\":%.2f,\"fetched_utc\":%"PRId64",\"wind_present\":%s,\"wind_mps\":%.3f,\"wind_grade\":%d,\"uv_present\":%s,\"uv_index\":%.2f,\"range_estimated\":%s,\"gust_present\":%s,\"gust_mps\":%.3f}",i?",":"",d->date,weather_provider_name(d->provider),d->present?"true":"false",date_ok&&weather_day_valid(d,utc,ms,n.time_valid)?"true":"false",d->present&&today[0]&&strcmp(d->date,today)==0?"true":"false",d->code,d->present?weather_kind_name(d->code):"unknown",d->high_c,d->low_c,d->precipitation_present?"true":"false",d->precipitation_pct,d->fetched_utc,d->wind_present?"true":"false",d->wind_mps,d->wind_present?weather_wind_grade(d->wind_mps):-1,d->uv_present?"true":"false",d->uv_index,d->range_estimated?"true":"false",d->gust_present?"true":"false",d->gust_mps);
     }
     printf("]}");
+    const air_quality_current_t *aq=&w.air_quality;
+    printf(",\"air_quality\":{\"source\":\"Open-Meteo / CAMS global\",\"index\":\"US AQI\",\"model_data\":true,\"present\":%s,\"valid\":%s,\"poor\":%s,\"us_aqi\":%.2f,\"pm25_present\":%s,\"pm25_ug_m3\":%.2f,\"source_utc\":%"PRId64",\"fetched_utc\":%"PRId64",\"fetched_ms\":%"PRIu64",\"fetching\":%s,\"attempts\":%"PRIu32",\"successes\":%"PRIu32",\"http\":%d,\"transport_error\":%d,\"bytes\":%d,\"result\":\"%s\",\"attempted_ms\":%"PRIu64",\"finished_ms\":%"PRIu64",\"next_due_ms\":%"PRIu64"}",
+        aq->present?"true":"false",air_quality_valid(aq,utc,ms,n.time_valid)?"true":"false",air_quality_valid(aq,utc,ms,n.time_valid)&&air_quality_poor(aq)?"true":"false",aq->us_aqi,aq->pm25_present?"true":"false",aq->pm25_ug_m3,aq->source_utc,aq->fetched_utc,aq->fetched_ms,w.air_quality_fetching?"true":"false",w.air_quality_attempts,w.air_quality_successes,w.air_quality_http,w.air_quality_transport,w.air_quality_bytes,weather_error_name(w.air_quality_error),w.air_quality_attempted_ms,w.air_quality_finished_ms,w.air_quality_next_due_ms);
 }
 #if CONFIG_CLOCK_DIAGNOSTICS
 int weather_command(const char *line,uint32_t *rid) {
@@ -729,7 +833,7 @@ int weather_command(const char *line,uint32_t *rid) {
 #endif
 void weather_start(void) {
     mutex=xSemaphoreCreateMutex(); http_budget=xSemaphoreCreateMutex(); configASSERT(mutex&&http_budget);
-    state.error=WX_UNCONFIGURED;
+    state.error=WX_UNCONFIGURED;state.air_quality_error=WX_UNCONFIGURED;
     met_cache=heap_caps_calloc(1,sizeof *met_cache,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
     configASSERT(xTaskCreate(service,"weather",12288,NULL,3,NULL)==pdPASS);
 }

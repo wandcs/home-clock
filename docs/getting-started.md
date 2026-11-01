@@ -36,7 +36,7 @@ python tools/check-build.py --source-only
 
 ## 联系信息和设置
 
-默认固件不嵌入联系邮箱，不读取当前目录中的 `wifi.txt` 或私有天气联系文件。Open-Meteo主天气源照常使用；需要启用MET Norway当前天气备源时，按[构建说明](building.md#可选met-norway联系信息)明确提供自己的联系配置。
+默认固件不嵌入联系邮箱，不读取当前目录中的 `wifi.txt` 或私有天气联系文件。Open-Meteo主天气源照常使用；需要启用MET Norway当前天气及未来完整日期的参考温区备源时，按[构建说明](building.md#可选met-norway联系信息)明确提供自己的联系配置。
 
 烧录后，通过屏幕配置Wi-Fi和天气位置。默认闹铃音色、音量滑条、自动校时、调休日历等行为沿用固件；构建不会创建测试闹铃或改开发板上的设置。
 

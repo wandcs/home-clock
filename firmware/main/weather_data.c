@@ -19,7 +19,7 @@ bool weather_url(double lat,double lon,const char *timezone,char *out,size_t cap
         else encoded[used++]=(char)c;
     }
     encoded[used]=0;
-    int written=snprintf(out,capacity,"https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f&current=temperature_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max&forecast_days=7&temperature_unit=celsius&wind_speed_unit=ms&timezone=%s&timeformat=iso8601",lat,lon,encoded);
+    int written=snprintf(out,capacity,"https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f&current=temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max&forecast_days=7&temperature_unit=celsius&wind_speed_unit=ms&timezone=%s&timeformat=iso8601",lat,lon,encoded);
     return written>0&&(size_t)written<capacity;
 }
 
@@ -196,6 +196,10 @@ weather_error_t weather_parse(const char *json,size_t length,int64_t utc,uint64_
         if(unit(cu,"wind_speed_10m","m/s")&&number(get(c,"wind_speed_10m"),0,150,&wind)){
             p.current.wind_present=true;p.current.wind_mps=(float)wind;
         }
+        double gust;
+        if(unit(cu,"wind_gusts_10m","m/s")&&number(get(c,"wind_gusts_10m"),0,150,&gust)){
+            p.current.gust_present=true;p.current.gust_mps=(float)gust;
+        }
     }
     cJSON *daily=get(root,"daily"),*du=get(root,"daily_units");
     const char *keys[]={"time","weather_code","temperature_2m_max","temperature_2m_min"}; cJSON *a[4]; bool arrays=true;
@@ -228,6 +232,11 @@ weather_error_t weather_parse(const char *json,size_t length,int64_t utc,uint64_
                     &&number(cJSON_GetArrayItem(wa,i),0,150,&wind)){
                     p.days[i].wind_present=true;p.days[i].wind_mps=(float)wind;
                 }
+                cJSON *ga=get(daily,"wind_gusts_10m_max");double gust;
+                if(unit(du,"wind_gusts_10m_max","m/s")&&cJSON_IsArray(ga)&&cJSON_GetArraySize(ga)==7
+                    &&number(cJSON_GetArrayItem(ga,i),0,150,&gust)){
+                    p.days[i].gust_present=true;p.days[i].gust_mps=(float)gust;
+                }
                 /* The provider serializes a dimensionless index with an empty
                  * unit. Optional UV never invalidates otherwise usable weather.
                  * FLT_MAX limits representation, not the physical UV scale. */
@@ -246,7 +255,7 @@ done:
 }
 void weather_merge(weather_data_t *cache,const weather_data_t *fresh) {
     /* A usable fresh day replaces its complete optional-field snapshot. A
-     * missing UV value must not revive an older strong-UV cue. */
+     * missing UV or gust value must not revive an older optional cue. */
     weather_data_t result=*fresh;
     if(!fresh->timezone[0]) {
         memcpy(result.timezone,cache->timezone,sizeof result.timezone);

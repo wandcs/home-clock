@@ -31,15 +31,15 @@
 
 网络需能访问乐鑫组件仓库；已存在的SDK工具和组件缓存可以复用。生成锁可能更新依赖层级或manifest元信息。精确组件版本与本地BSP兼容修改见[兼容说明](../components/waveshare__esp32_p4_wifi6_touch_lcd_7b/COMPATIBILITY.md)。
 
-正常固件构建直接编译已提交的字体、图形、音型和地点索引，不需要原开发机的`.local`内容。原始数据、源字体及部分生成环境属于可选的资源重生成流程，见[应用资源](../assets/application/README.md)与[天气背景资源](../assets/weather-background/README.md)。必要署名和许可随对应资源保存；doctor检查文件存在和摘要，不判断地点数据时效或替代许可审阅。
+正常固件构建直接编译已提交的字体、图形、音型和地点索引，不需要原开发机的`.local`内容。天气提示的小字补充包同样已生成，来源和缺字范围见[资源记录](../assets/application/weather_hint_fonts.json)，可用[生成器](../tools/generate-weather-hint-fonts.py)在固定源字体/Pillow环境重现；日常构建无需运行它。原始数据、源字体及部分生成环境属于可选的资源重生成流程，见[应用资源](../assets/application/README.md)与[天气背景资源](../assets/weather-background/README.md)。必要署名和许可随对应资源保存；doctor检查文件存在和摘要，不判断地点数据时效或替代许可审阅。
 
 这里的可复现是从完整源码与明确版本重新构建。编译时间、安装路径等可能影响ELF和BIN摘要，不承诺不同电脑产物逐字节一致。干净源码构建的实际验证条件会单独记录，包括所复用的SDK、工具和缓存。
 
 ## 可选MET Norway联系信息
 
-公共入口默认给构建子进程传入空的 `HOME_CLOCK_MET_CONTACT_CONFIG`，生成单个NUL字节，不读取任何已有私有联系文件。MET当前天气备源因而未配置；主源不受影响。
+公共入口默认给构建子进程传入空的 `HOME_CLOCK_MET_CONTACT_CONFIG`，生成单个NUL字节，不读取任何已有私有联系文件。MET当前天气与未来完整日期的参考温区备源因而均未配置；Open-Meteo主源和低频空气质量查询不受影响。
 
-需要备源时，在忽略目录中自行创建JSON，例如 `.local/my-weather-contact.json`：
+需要启用上述备源时，在忽略目录中自行创建JSON，例如 `.local/my-weather-contact.json`：
 
 ```json
 {"met_user_agent":"home-clock/0.4 (+https://example.org/contact)"}

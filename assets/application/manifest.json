@@ -189,5 +189,17 @@
   "home-assets.json": {
     "bytes": 2222,
     "sha256": "a202a3a55226641cca28822570854af942c3616f76874cc2f8384b96ffc7b5c3"
+  },
+  "weather_hint_fonts.c": {
+    "bytes": 45844,
+    "sha256": "eb741e09a78b8f7601fd6ba7598f35f99314398a6ec3723e08777d61e85878a0"
+  },
+  "weather_hint_fonts.h": {
+    "bytes": 251,
+    "sha256": "5c5fd02d5450c7e3a10c7a59899cf82270038b688a747f4895f83cb1ad9f0856"
+  },
+  "weather_hint_fonts.json": {
+    "bytes": 5610,
+    "sha256": "d6e433d547aadaaeb8b9a599890eb019e3c37fdb8dd2518e9dc29a36bb2f0b05"
   }
 }

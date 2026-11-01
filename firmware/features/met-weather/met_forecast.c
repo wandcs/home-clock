@@ -1,4 +1,4 @@
-/* MET compact contract only: bounded JSON validation and short hourly cache. */
+/* MET complete: bounded JSON validation, hourly current and reference days. */
 #include "met_forecast.h"
 #include "cJSON.h"
 #include <math.h>
@@ -10,11 +10,24 @@
 
 typedef enum { PATH_OTHER, PATH_ROOT, PATH_PROPERTIES, PATH_SERIES } path_t;
 typedef struct {
+    uint32_t weather_seconds;
+    unsigned temperatures, winds;
+    int code, rank;
+    int64_t first_temperature, last_temperature;
+    int64_t max_temperature_gap;
+    float low, high, period_low, period_high, wind_max;
+    bool period_range;
+} day_accumulator_t;
+typedef struct {
     const char *json;
     size_t length, pos, values, series_items;
     unsigned root_seen, properties_seen;
     int64_t utc, previous_time;
-    bool temperature_unit, wind_unit;
+    bool temperature_unit, wind_unit, range_unit;
+    day_accumulator_t days[MET_FORECAST_DAYS];
+    int64_t pending_start, pending_end;
+    int pending_code;
+    bool pending_known;
     weather_error_t error;
     met_forecast_t forecast;
 } reader_t;
@@ -174,6 +187,102 @@ static bool symbol(const cJSON *v, int *code) {
         if (strlen(map[i].name)==len && !memcmp(s,map[i].name,len)) { *code=map[i].code; return true; }
     return false;
 }
+/* Daily symbols are a reference of possible weather, not an all-day claim.
+ * Wet phenomena take priority; within a class retain the stronger known code.
+ * No duration/probability/intensity is inferred from an unknown symbol. */
+static int day_rank(int code) {
+    switch (code) {
+    case 95: return 80;
+    case 75: case 86: return 73;
+    case 73: return 72;
+    case 71: case 85: return 71;
+    case 65: case 82: return 63;
+    case 63: case 81: return 62;
+    case 61: case 80: return 61;
+    case 45: return 50;
+    case 3: return 40;
+    case 2: return 30;
+    case 1: return 20;
+    case 0: return 10;
+    default: return 0;
+    }
+}
+static void flush_period(reader_t *r, int64_t until) {
+    if (!r->pending_known || !r->forecast.days_end_utc) return;
+    int64_t end = r->pending_end < until ? r->pending_end : until;
+    for (unsigned i=0; i<MET_FORECAST_DAYS; i++) {
+        int64_t begin=r->forecast.days_begin_utc+(int64_t)i*86400;
+        int64_t a=r->pending_start>begin?r->pending_start:begin;
+        int64_t b=end<begin+86400?end:begin+86400;
+        if (a>=b) continue;
+        day_accumulator_t *day=&r->days[i];
+        /* Each period is clipped at the next sorted timepoint, so an hourly
+         * forecast supersedes a previous six-hour period without overlap. */
+        day->weather_seconds+=(uint32_t)(b-a);
+        int rank=day_rank(r->pending_code);
+        if (rank>day->rank) { day->rank=rank;day->code=r->pending_code; }
+    }
+}
+static void accumulate_day(reader_t *r,int64_t at,const cJSON *data) {
+    if (!r->forecast.days_end_utc || at<r->forecast.days_begin_utc || at>=r->forecast.days_end_utc) return;
+    unsigned index=(unsigned)((at-r->forecast.days_begin_utc)/86400);
+    int64_t begin=r->forecast.days_begin_utc+(int64_t)index*86400;
+    day_accumulator_t *day=&r->days[index];
+    const cJSON *instant=get(get(data,"instant"),"details");
+    float temperature,wind;
+    if (number(get(instant,"air_temperature"),-100,100,&temperature)) {
+        if (!day->temperatures) { day->low=day->high=temperature;day->first_temperature=at; }
+        else {
+            if (temperature<day->low) day->low=temperature;
+            if (temperature>day->high) day->high=temperature;
+            int64_t gap=at-day->last_temperature;
+            if (gap>day->max_temperature_gap) day->max_temperature_gap=gap;
+        }
+        day->temperatures++;day->last_temperature=at;
+        if (number(get(instant,"wind_speed"),0,150,&wind)) {
+            if (!day->winds || wind>day->wind_max) day->wind_max=wind;
+            day->winds++;
+        }
+    }
+    /* An overlapping midnight period cannot reveal which date owns an
+     * extremum. Use only full six-hour ranges contained in this date. */
+    if (at+21600<=begin+86400) {
+        const cJSON *details=get(get(data,"next_6_hours"),"details");
+        float low,high;
+        if (number(get(details,"air_temperature_min"),-100,100,&low)
+            && number(get(details,"air_temperature_max"),-100,100,&high) && low<=high) {
+            if (!day->period_range) { day->period_low=low;day->period_high=high;day->period_range=true; }
+            else { if (low<day->period_low) day->period_low=low;if (high>day->period_high) day->period_high=high; }
+        }
+    }
+}
+static unsigned finish_days(reader_t *r) {
+    flush_period(r,INT64_MAX);
+    unsigned count=0;
+    for (unsigned i=0; i<MET_FORECAST_DAYS && r->forecast.days_end_utc; i++) {
+        int64_t begin=r->forecast.days_begin_utc+(int64_t)i*86400;
+        weather_day_t *out=&r->forecast.days[i];
+        if (!weather_local_date(begin,r->forecast.offset_s,out->date)) continue;
+        day_accumulator_t *day=&r->days[i];
+        /* Never synthesize today's past. A cached future full date is later
+         * allowed to roll into today, without regenerating its statistics. */
+        if (!i || day->weather_seconds!=86400 || day->temperatures<4
+            || day->first_temperature>begin+21600 || day->last_temperature<begin+64800
+            || day->max_temperature_gap>21600) continue;
+        out->present=true;out->range_estimated=true;out->provider=WX_PROVIDER_MET;
+        out->code=day->code;out->low_c=day->low;out->high_c=day->high;
+        if (r->range_unit && day->period_range) {
+            if (day->period_low<out->low_c) out->low_c=day->period_low;
+            if (day->period_high>out->high_c) out->high_c=day->period_high;
+        }
+        /* This is a maximum of model samples on a reference day, not a gust
+         * or a measured continuous daily maximum. Missing samples stay unknown. */
+        out->wind_present=r->wind_unit && day->winds==day->temperatures;
+        if (out->wind_present) out->wind_mps=day->wind_max;
+        count++;
+    }
+    return count;
+}
 static bool small_object(reader_t *r, size_t start, size_t values, bool meta) {
     if (r->pos-start > MET_FORECAST_OBJECT_LIMIT || r->values-values > OBJECT_VALUES) { r->error=WX_TOO_LARGE; return false; }
     const char *end = NULL;
@@ -188,11 +297,20 @@ static bool small_object(reader_t *r, size_t start, size_t values, bool meta) {
             && r->forecast.model_updated_utc <= r->utc+300 && cJSON_IsObject(units);
         r->temperature_unit = unit(units,"air_temperature","celsius");
         r->wind_unit = unit(units,"wind_speed","m/s");
+        r->range_unit = unit(units,"air_temperature_min","celsius") && unit(units,"air_temperature_max","celsius");
     } else {
         const cJSON *time = get(object,"time"), *data = get(object,"data"); int64_t at;
         ok = cJSON_IsString(time) && date_utc(time->valuestring,&at) && at>r->previous_time && cJSON_IsObject(data);
         if (ok) {
+            flush_period(r,at);
             r->previous_time=at;
+            if (!r->forecast.series_first_utc) r->forecast.series_first_utc=at;
+            r->forecast.series_last_utc=at;
+            accumulate_day(r,at,data);
+            const cJSON *hour=get(data,"next_1_hours");
+            const cJSON *period=cJSON_IsObject(hour)?hour:get(data,"next_6_hours");
+            r->pending_start=at;r->pending_end=at+(cJSON_IsObject(hour)?3600:21600);
+            r->pending_known=symbol(get(get(period,"summary"),"symbol_code"),&r->pending_code);
             const cJSON *details=get(get(data,"instant"),"details");
             const cJSON *summary=get(get(data,"next_1_hours"),"summary");
             met_point_t point={.source_utc=at,.code=999};
@@ -278,14 +396,22 @@ static bool value(reader_t *r, unsigned depth, path_t path) {
     if (!literal || r->length-r->pos<strlen(literal) || memcmp(r->json+r->pos,literal,strlen(literal))) return false;
     r->pos+=strlen(literal); return true;
 }
-weather_error_t met_forecast_parse(const char *json, size_t length, int64_t utc, met_forecast_t *out) {
+weather_error_t met_forecast_parse(const char *json, size_t length, int64_t utc, int offset_s, met_forecast_t *out) {
     if (!json || !out || !length || utc<1577836800LL || utc>4133980800LL) return WX_SCHEMA;
     if (length>MET_FORECAST_BODY_LIMIT) return WX_TOO_LARGE;
+    if (offset_s!=MET_OFFSET_UNKNOWN && (offset_s < -43200 || offset_s > 50400)) return WX_SCHEMA;
     reader_t r={.json=json,.length=length,.utc=utc,.error=WX_JSON};
+    r.forecast.offset_s=offset_s;
+    if (offset_s!=MET_OFFSET_UNKNOWN) {
+        r.forecast.days_begin_utc=((utc+offset_s)/86400)*86400-offset_s;
+        r.forecast.days_end_utc=r.forecast.days_begin_utc+MET_FORECAST_DAYS*86400LL;
+    }
     space(&r);
     if (r.pos==r.length || r.json[r.pos]!='{' || !value(&r,0,PATH_ROOT)) return r.error;
     space(&r); if (r.pos!=length) return WX_JSON;
-    if (r.root_seen!=3 || r.properties_seen!=3 || !r.temperature_unit || !r.forecast.count) return WX_SCHEMA;
+    if (r.root_seen!=3 || r.properties_seen!=3 || !r.temperature_unit) return WX_SCHEMA;
+    unsigned days=finish_days(&r);
+    if (!r.forecast.count && !days) return WX_SCHEMA;
     if (!r.wind_unit) for (size_t i=0;i<r.forecast.count;i++) { r.forecast.points[i].wind_present=false; r.forecast.points[i].wind_mps=0; }
     *out=r.forecast; return WX_OK;
 }
@@ -305,4 +431,32 @@ bool met_forecast_select(const met_forecast_t *forecast, int64_t utc, int64_t fe
         *out=c; return true;
     }
     return false;
+}
+
+unsigned met_forecast_select_days(const met_forecast_t *forecast,int64_t utc,
+    int64_t fetched_utc,uint64_t fetched_ms,weather_day_t out[WEATHER_DAYS]) {
+    if (!out) return 0;
+    memset(out,0,sizeof(*out)*WEATHER_DAYS);
+    if (!forecast || forecast->offset_s < -43200 || forecast->offset_s > 50400
+        || utc<1577836800LL || utc>4133980800LL || !forecast->days_end_utc
+        || forecast->days_end_utc-forecast->days_begin_utc!=MET_FORECAST_DAYS*86400LL
+        || fetched_utc<=0 || fetched_utc>utc+300 || utc-fetched_utc>WEATHER_DAILY_MAX_AGE
+        || forecast->model_updated_utc<=0 || forecast->model_updated_utc>utc+300) return 0;
+    int64_t today=((utc+forecast->offset_s)/86400)*86400-forecast->offset_s;
+    unsigned count=0;
+    for (unsigned i=0;i<WEATHER_DAYS;i++) {
+        int64_t begin=today+(int64_t)i*86400;
+        if (!weather_local_date(begin,forecast->offset_s,out[i].date)) continue;
+        if (begin<forecast->days_begin_utc || begin>=forecast->days_end_utc) continue;
+        const weather_day_t *cached=&forecast->days[(begin-forecast->days_begin_utc)/86400];
+        if (!cached->present || !cached->range_estimated || strcmp(cached->date,out[i].date)
+            || !isfinite(cached->low_c) || !isfinite(cached->high_c)
+            || cached->low_c < -100 || cached->high_c>100 || cached->low_c>cached->high_c
+            || !day_rank(cached->code)) continue;
+        out[i]=*cached;out[i].fetched_utc=fetched_utc;out[i].fetched_ms=fetched_ms;
+        /* Cache entries are parser-owned full snapshots. Revalidation only
+         * attaches actual fetch times; no optional field is borrowed. */
+        count++;
+    }
+    return count;
 }

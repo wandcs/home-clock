@@ -11,7 +11,7 @@
 | firmware/features/alarm-audio | 音源、播放器及I²S/codec/功放适配 |
 | firmware/features/calendar-* | 年度取得、解析、缓存与批准快照 |
 | firmware/features/environment | 传感器快照与环境策略适配 |
-| firmware/features/met-weather | MET当前天气解析 |
+| firmware/features/met-weather | MET当前与完整未来日期的参考预报解析 |
 | firmware/core | 亮度、舒适、日照、日期与闹铃计算 |
 | components / assets | 固定BSP与可追溯资源 |
 | tools | 构建、生成和宿主验证 |
@@ -37,7 +37,7 @@ BSP统一建立显示、触摸和I²C。传感器发布快照，UI取快照刷�
 
 音频worker独占I²S和codec。界面发出非阻塞请求，停止先关功放，后续由worker清理。试听复用同一播放器，真实闹铃优先。
 
-天气/年历共用受控HTTPS预算；天气失败不拖住本地时钟、传感器和闹铃。仅主源失败才试已配置备源，不增加正常更新频率。
+天气/年历共用受控HTTPS预算；天气失败不拖住本地时钟、传感器和闹铃。主源缺少当前或逐日组时按日期尝试已配置备源，不增加正常天气更新频率。空气质量在同一weather worker内按独立三小时预算取数，先发布天气结果再串行查询，独立缓存、时效与失败状态。共同weather_hint选择器供主页和日列复用，按两档风与来源天气类别选一项异常；当前路径随后检查独立AQ，日路径随后检查日UV、概率与普通风，不混用时间尺度。日参考温区保留range_estimated标记。
 
 ## 配置与资源
 

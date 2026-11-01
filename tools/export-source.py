@@ -21,6 +21,7 @@ FILES = {
     "firmware/sdkconfig.development", "firmware/toolchain-lock.json",
     "tools/build.ps1", "tools/check-build.py", "tools/check-core.py",
     "tools/generate-home-assets.py",
+    "tools/generate-weather-hint-fonts.py",
     "tools/prepare-weather-contact.py", "tools/export-source.py",
     "tools/alarm-audio/generate.py", "tools/alarm-audio/synthesize.py",
     "tools/brightness-policy/test_policy.c", "tools/indoor-comfort/test.c",
@@ -134,7 +135,7 @@ def main():
         "scope": "reviewed product snapshot; no Git history, local config, SDK, build outputs or device evidence",
         "privacy_check": "bounded text patterns; known binary resources excluded; other selected UTF8 text scanned; not a guarantee against every possible secret",
     }
-    (target / "SOURCE_MANIFEST.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf8")
+    (target / "SOURCE_MANIFEST.json").write_bytes((json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode("utf8"))
     print(f"Exported {len(files)} reviewed files to {target}; no Git history or device action.")
 
 

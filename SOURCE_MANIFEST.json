@@ -1,5 +1,5 @@
 {
-  "file_count": 220,
+  "file_count": 228,
   "files": {
     ".gitattributes": {
       "bytes": 697,
@@ -46,12 +46,12 @@
       "sha256": "1e6c90014b4912815c296ee64bb6f6280af47e6d4c5d80e86232dfc5defe764c"
     },
     "README.md": {
-      "bytes": 4304,
-      "sha256": "20973dad764de410d65563f280680a0beca0d6e35143dac29bf8201150c599bc"
+      "bytes": 4804,
+      "sha256": "c82207a18cac6cd615fe2ea7d1a6ea1aa3ca9f2ee35ba14420b7a404cc8c6e04"
     },
     "THIRD_PARTY_NOTICES.md": {
-      "bytes": 3993,
-      "sha256": "69bd9e045ffcafe32272496380e7ce706a222ac1bf37de96249b1d25e6eb667b"
+      "bytes": 4555,
+      "sha256": "bc08fe53d3b182d92518e04b2718d9b82e99bde96f2eb9f5dcbc3f5ae7d62fa0"
     },
     "assets/alarm-audio/README.md": {
       "bytes": 972,
@@ -182,8 +182,8 @@
       "sha256": "0e04c9a0b4709bd20c081377c5b729d65b9b052c138bf338f05cec69424d4d5f"
     },
     "assets/application/manifest.json": {
-      "bytes": 6709,
-      "sha256": "584b3334ea7dea536df52066f94de43dd1d5fbc34df84b48bd3b0ca3d3cb4cd4"
+      "bytes": 7111,
+      "sha256": "2accfd57b9570f76185ad00b7cd3cbbeb64f6c199e957f843c29bc78559565a6"
     },
     "assets/application/navigation_bell.h": {
       "bytes": 13248,
@@ -236,6 +236,18 @@
     "assets/application/weather_forecast_icons.h": {
       "bytes": 398,
       "sha256": "b159ab62d58915bc30509e38a3bd0cba68658eb986f8c298b86076e7652346ec"
+    },
+    "assets/application/weather_hint_fonts.c": {
+      "bytes": 45844,
+      "sha256": "eb741e09a78b8f7601fd6ba7598f35f99314398a6ec3723e08777d61e85878a0"
+    },
+    "assets/application/weather_hint_fonts.h": {
+      "bytes": 251,
+      "sha256": "5c5fd02d5450c7e3a10c7a59899cf82270038b688a747f4895f83cb1ad9f0856"
+    },
+    "assets/application/weather_hint_fonts.json": {
+      "bytes": 5610,
+      "sha256": "d6e433d547aadaaeb8b9a599890eb019e3c37fdb8dd2518e9dc29a36bb2f0b05"
     },
     "assets/application/weather_overcast.bin": {
       "bytes": 9216,
@@ -370,16 +382,16 @@
       "sha256": "9c8566af749cf9861847d9d85c4d23e0da6475643b5a52dbe2eeee99e7d69800"
     },
     "docs/architecture.md": {
-      "bytes": 2604,
-      "sha256": "e0c4209564aa91a9d3b72c645b3453529f061486c50750f3e67c3cf55b3319ef"
+      "bytes": 3075,
+      "sha256": "47abae67248fcf08add27224a1b42745f1d508f93fe7eff0d85ac79bee237db5"
     },
     "docs/building.md": {
-      "bytes": 7378,
-      "sha256": "a6ff557558553e3c5e3909acb1dd8e517e5403ddf78929d35fe1d3fd1e7e8ad7"
+      "bytes": 7730,
+      "sha256": "88b5c69a4cba473d461afa6d6755600fcaae20229b6fe1c249316813ad73b5b9"
     },
     "docs/getting-started.md": {
-      "bytes": 2185,
-      "sha256": "580089d95afe4f14dae9f04e1d85bb9711f411c6679bc115ba95be69f97505cb"
+      "bytes": 2221,
+      "sha256": "602738be7c73a4361e9974dc5ab0f52d098666c77b260b7cb8f172babb2fb1b4"
     },
     "docs/hardware.md": {
       "bytes": 1579,
@@ -390,12 +402,12 @@
       "sha256": "d23791e6516daccaa8741429d554154672551cfdbbe3e21b2e48841b30df1e26"
     },
     "docs/images/forecast.png": {
-      "bytes": 36411,
-      "sha256": "aab302afd617f233c71bd37fa4db745214e678b595751ab19fe540c698c91e25"
+      "bytes": 20958,
+      "sha256": "cedc3271409c607af94de7d14b9f65a78ac6465952e546a84216168933f463f1"
     },
     "docs/images/home.png": {
-      "bytes": 187506,
-      "sha256": "d2407c936f458c0e66cdba241760f6edf21717b422aad5f87b2adf85366a999b"
+      "bytes": 136271,
+      "sha256": "55fd577dfa3519764d52cae311ea370400ecc6545f6f2821e3259c1b68228b39"
     },
     "docs/images/swipe.gif": {
       "bytes": 3222307,
@@ -410,16 +422,16 @@
       "sha256": "a1a0491a309bfc68933ab0e69a21528e949a1e786b1ae83602122cabec5b62b2"
     },
     "docs/open-source/README.md": {
-      "bytes": 2947,
-      "sha256": "ff865fcda7d7dcee7f3b08a57a441a3255228a4ce211d9a5f40b6fa0e7eedcdd"
+      "bytes": 3025,
+      "sha256": "de5d72c7f388585c2aa87b70fac2432785f7674dc7b33b08649d5667e6efea0a"
     },
     "docs/open-source/data-sources.md": {
       "bytes": 7593,
       "sha256": "a979b0480572f9851925a0f05045de317cf4ae4fc83000aa51af176e65bbb9a1"
     },
     "docs/usage.md": {
-      "bytes": 1963,
-      "sha256": "dca1ce534e803ffb9c7d0225289d1cf95932f5513a3e94217d1fdb972377c3cd"
+      "bytes": 3144,
+      "sha256": "f0bf0c9acb5b59ac58141b00d06741e4dc72f76f7a0d1d99928b0213a1198bcb"
     },
     "firmware/.gitignore": {
       "bytes": 20,
@@ -634,20 +646,28 @@
       "sha256": "25b59e4e64393d22a409a5fd8ff4bfd0c05747ad5c38133b95756ac6019734c8"
     },
     "firmware/features/met-weather/met_forecast.c": {
-      "bytes": 16472,
-      "sha256": "4a5433bca70e331b541e9b3caa87bc39162a5e73669c998b6afb84e66366b890"
+      "bytes": 24361,
+      "sha256": "3ea70c4fee9e66ebaef4d52ea768d64a5554657b100994278692a53fb3abec59"
     },
     "firmware/features/met-weather/met_forecast.h": {
-      "bytes": 1062,
-      "sha256": "eebfbe3e8238b5be4208f39ad9a2025a416a7e8ff2d91a6a52f6f0c7052b9f1e"
+      "bytes": 2097,
+      "sha256": "60636ff8293c31e4b06aecdfac4c582bc2b079f53b370c34da8a83814b540253"
     },
     "firmware/main/CMakeLists.txt": {
-      "bytes": 5453,
-      "sha256": "a36354f5f1ab26dfb41487d9815b62d432c9aa57ff4b917009e1fd690bf84560"
+      "bytes": 5602,
+      "sha256": "9962a6c385e90f779cb8de9f5077636fa804817d3abaf8643a4fbb68bbabce85"
     },
     "firmware/main/Kconfig.projbuild": {
       "bytes": 357,
       "sha256": "f2f59a6525f4ae2bfb2636a7d371679c473674c7a8ef3573bb0073951e3d0c0d"
+    },
+    "firmware/main/air_quality.c": {
+      "bytes": 4693,
+      "sha256": "305effb2d98e30a64d89695b6effe187b6ccfe67781691f80f8fa4fcc2964a31"
+    },
+    "firmware/main/air_quality.h": {
+      "bytes": 1305,
+      "sha256": "bf0411216a4c3948cc3dd5c732a4f395f1468f18246dee42b72d46c3be9a7504"
     },
     "firmware/main/app_main.c": {
       "bytes": 3246,
@@ -662,8 +682,8 @@
       "sha256": "74feeb7000f32011cf90d59a37550215d8d587ae503697b5a13e980fe3116b54"
     },
     "firmware/main/app_ui.c": {
-      "bytes": 97076,
-      "sha256": "e28bf6cbcc727f5a4e003e95be2adec0b5601e57bca8cbe450841d9362b80f00"
+      "bytes": 101453,
+      "sha256": "d5de05e7006d4bde8ddcd3cb681eb4e02d8ad402a3c4b34b7c7f410dd5da97d1"
     },
     "firmware/main/app_ui.h": {
       "bytes": 281,
@@ -770,12 +790,20 @@
       "sha256": "b4350c1c4b599ea82fc5d025b60fa59a205c3bc51d960660bef972f8c2be3f90"
     },
     "firmware/main/weather_data.c": {
-      "bytes": 15484,
-      "sha256": "3ccb876665aedeb0b09e49407867f820daf95439084b821e43417cb2e9085068"
+      "bytes": 16057,
+      "sha256": "457f5694bb23801f57725fbae4d90cb9f4af15091ecddfd71fcab914daf65341"
     },
     "firmware/main/weather_data.h": {
-      "bytes": 4049,
-      "sha256": "25f8da9d2f64eaef6fcfd3e401819c0a3031ee96656dbe6a81b8f201cd5e1ac6"
+      "bytes": 4298,
+      "sha256": "2f2a50653b97f1ed5012ab0ccc1846032f90b19a638e2a0abb2eb8702c643426"
+    },
+    "firmware/main/weather_hint.c": {
+      "bytes": 3418,
+      "sha256": "42fdb050d727e9c687b40cea60378f719149f59e123b132b577610962bfce06c"
+    },
+    "firmware/main/weather_hint.h": {
+      "bytes": 1385,
+      "sha256": "0da0ff4ed0f89ac488028804839a4f285ded7150cc7f23f654c30c2ee782d424"
     },
     "firmware/main/weather_schedule.c": {
       "bytes": 1034,
@@ -786,12 +814,12 @@
       "sha256": "f17004c348076328e421209521317e2b2575419b742e03f09e8e185f80f3d2aa"
     },
     "firmware/main/weather_service.c": {
-      "bytes": 46312,
-      "sha256": "0cedc29192617ce912ba4408ddd4760958ca976fb04fe8481280d6ba5f99f975"
+      "bytes": 55277,
+      "sha256": "75e02201b5fda4cda3a5d08e73803d298f0df26f7e604a68707433b369a28b32"
     },
     "firmware/main/weather_service.h": {
-      "bytes": 1386,
-      "sha256": "99724ebc9bdc5f9a8782bc591019597e3c5af02c5b774d122cdb59e3103a9ee6"
+      "bytes": 1793,
+      "sha256": "13aaa1d4f4748a9f0bdf184672a45d9af6d6fc981fae94b12beb7c0a27ac4146"
     },
     "firmware/main/wifi_store.c": {
       "bytes": 3508,
@@ -862,12 +890,16 @@
       "sha256": "4cbdc0d4652029adda86067fa2faf42921946ac5841f19084741f9321cef004e"
     },
     "tools/export-source.py": {
-      "bytes": 6913,
-      "sha256": "f3841ac220d90434ae576eaebc0ac3df057192f9edbca2cf9e551de48ac61fce"
+      "bytes": 6958,
+      "sha256": "85b45b4cf7644a375a9f6d703a8c581fc75511529e7fdb8f4c8b2eb9637f173b"
     },
     "tools/generate-home-assets.py": {
       "bytes": 9388,
       "sha256": "4636762c01f0e75c2d5141d4e1216d8a07c95e1cadf58394b4fa2b688bb7cd5b"
+    },
+    "tools/generate-weather-hint-fonts.py": {
+      "bytes": 10481,
+      "sha256": "d857ce4f0402ebfc6707617b33ffd621349e8e037644d6ecd41f7826f527c2cb"
     },
     "tools/indoor-comfort/test.c": {
       "bytes": 16940,
@@ -884,5 +916,5 @@
   },
   "privacy_check": "bounded text patterns; known binary resources excluded; other selected UTF8 text scanned; not a guarantee against every possible secret",
   "scope": "reviewed product snapshot; no Git history, local config, SDK, build outputs or device evidence",
-  "source_commit": "0f77ef3b04f4763dbfb51bc1b06f84b91206fb37"
+  "source_commit": "1039687c2f097bf1bddcb38ee74a79ff57b4588e"
 }

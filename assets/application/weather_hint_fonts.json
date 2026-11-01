@@ -1,0 +1,149 @@
+{
+  "version": "S20",
+  "generator": "tools/generate-weather-hint-fonts.py",
+  "input_sha256": {
+    "tools/generate-weather-hint-fonts.py": "d857ce4f0402ebfc6707617b33ffd621349e8e037644d6ecd41f7826f527c2cb",
+    "assets/application/font_weather_24.c": "6427f5e3c4b9587b309f107e01954fb9339ccebf00709499c343a528f7360cd1",
+    "assets/application/font_28.c": "d0881cdd96ee79b0b9ea3ed43c4c540ca482b167a215fe07481c42c099b50ffd",
+    "assets/application/home_assets.c": "66f165bd6102896f750f43c312dea30090a7ae347a941b41aa737dc7b672763e"
+  },
+  "font_source": "Noto Sans CJK SC Regular",
+  "font_source_sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+  "font_url": "https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+  "license": "SIL OFL 1.1; OFL.txt and NotoSans-LICENSE.txt",
+  "pillow": "12.3.0",
+  "method": "Missing direct-size glyphs only; 24px A4, 30px static A8; 28px zero-glyph fallback wrapper",
+  "fonts": {
+    "24": {
+      "font": "clock_font_hint_24",
+      "fallback": "clock_font_weather_24",
+      "line_height": 32,
+      "base_line": 7,
+      "bpp": 4,
+      "characters": "冰冻电较阵雨雪雷雹风",
+      "codepoints": [
+        20912,
+        20923,
+        30005,
+        36739,
+        38453,
+        38632,
+        38634,
+        38647,
+        38649,
+        39118
+      ],
+      "glyphs": 10,
+      "bitmap_bytes": 2760,
+      "fallback_own_glyphs": 3,
+      "requested_texts": [
+        "风17级",
+        "阵风17级",
+        "雨较强",
+        "冻雨",
+        "雪较强",
+        "雷电",
+        "冰雹",
+        "UV 强",
+        "100%",
+        "—"
+      ],
+      "new_glyph_source_alpha_sha256": {
+        "冰": "3f5ebf9cd6d712b74566fbffee1bde86457b91dfb7836e85ff6ea7d0273d5480",
+        "冻": "336deafa769cfec90a875840a0427b2bbdca50152b77ea4dd16fa2ffec9ff304",
+        "电": "deb3af27964fc7f8927b19f9af3e4d66f8f75da45054b6921417b4de39b001c0",
+        "较": "315b41ff54150ead9878d5b3d044375ae2769996f535631a74baf1761451177b",
+        "阵": "5a500cf1107e4ba44b7508069f32b4d8b2bdc04fc10dd02798516785a17169c4",
+        "雨": "684277cf43c9666b775ba06e46ca95d55ec2351f2f6d0197145e839ed50b54d0",
+        "雪": "b6d11d6224b30d7bccc79f8511958a045a9d733e75c023f63596d63b495ec02b",
+        "雷": "2e313af855b0e250b0f113fdefcbd770d7acef6d9d5af42b2dcf6a5d80ca7714",
+        "雹": "1c05726d78878024f41ab47bb148052e6042f6de7251379a41d3ddaec974230d",
+        "风": "59cd0e989d10f2edfa1ca237b5b08b0d96dc53a8b6a854d9fb2ae3f54cbfafbc"
+      }
+    },
+    "28": {
+      "font": "clock_font_hint_28",
+      "fallback": "clock_font_28",
+      "line_height": 42,
+      "base_line": 9,
+      "bpp": null,
+      "characters": "",
+      "codepoints": [],
+      "glyphs": 0,
+      "bitmap_bytes": 0,
+      "fallback_own_glyphs": 6963,
+      "requested_texts": [
+        "约-5～8°",
+        "参考温区",
+        "MET未来完整日采样温度范围，并非标准日高低温；今天不完整不补。空气欠佳：CAMS全球模型，美标AQI>100提示，非本地测量或官方预警。每3小时取数，独立有效期4小时，当前小时有效。逐日来源与取得状态"
+      ],
+      "new_glyph_source_alpha_sha256": {}
+    },
+    "30": {
+      "font": "clock_font_hint_30",
+      "fallback": "clock_home_font_30",
+      "line_height": 44,
+      "base_line": 9,
+      "bpp": 8,
+      "characters": "佳冰冻强欠电空约较阵雨雪雷雹",
+      "codepoints": [
+        20339,
+        20912,
+        20923,
+        24378,
+        27424,
+        30005,
+        31354,
+        32422,
+        36739,
+        38453,
+        38632,
+        38634,
+        38647,
+        38649
+      ],
+      "glyphs": 14,
+      "bitmap_bytes": 12180,
+      "fallback_own_glyphs": 150,
+      "requested_texts": [
+        "风17级",
+        "阵风17级",
+        "雨较强",
+        "冻雨",
+        "雪较强",
+        "雷电",
+        "冰雹",
+        "空气欠佳",
+        "约-5～8°"
+      ],
+      "new_glyph_source_alpha_sha256": {
+        "佳": "6fb2e93eb18d5e33a7f2e80cecb070b0744d0fe9288d2034d3903cb5aa09851f",
+        "冰": "89e2db656f0831bb91bf580215a74ae70e7176102849ee3178e0d2bb4dde49c0",
+        "冻": "15f2b9395d7188213189ca96c114083a77a87a20f2b1dd0ed109381a3db1b6a9",
+        "强": "18aabe6aa5e84eeeb8bb7e027f3ecc9581aec3330d211108a1d0a09e28c262da",
+        "欠": "f959810a858656ba276d40e26376a53a40f5cae8019bffe078550e81f2dffe8b",
+        "电": "3cb27625d12c43dab35227c30d499ed54c87019e837bf714ca25e69a7d5941ed",
+        "空": "cb8248a675973142feabe89be00edf9008dc3568150925ad9a73b3ba67473010",
+        "约": "a6f9756e11509319386e8f0b06579e4c2762f2b46ba507afa09c3f84ca1ca170",
+        "较": "a0566d3205d0ce23811bb4c3cffe513880e660c2e5fd0d9f6b58e4a4c167c997",
+        "阵": "4ffc4ee242d1098948a4723c20be1eb1f42555ae65913f310a7e8763802bf317",
+        "雨": "25785e5a8a4da6c46a063cede3ee5d3b392e5a896bfea139dd4409dd6aa18ba0",
+        "雪": "36c487efb70cc7903377775d22bb5bad4186f13cfab2f5daf6a1ff65bce03b3f",
+        "雷": "cfd5ecfa18b534c0fba948abcc3388e76f44ed315e1c63b0f3b90e4185f03435",
+        "雹": "dc8c8cb437f4473bb5df652401114cc0c4f01537e5943a2150e18bd2063ef45b"
+      }
+    }
+  },
+  "total_glyphs": 24,
+  "total_bitmap_bytes": 14940,
+  "outputs": {
+    "weather_hint_fonts.c": {
+      "bytes": 45844,
+      "sha256": "eb741e09a78b8f7601fd6ba7598f35f99314398a6ec3723e08777d61e85878a0"
+    },
+    "weather_hint_fonts.h": {
+      "bytes": 251,
+      "sha256": "5c5fd02d5450c7e3a10c7a59899cf82270038b688a747f4895f83cb1ad9f0856"
+    }
+  }
+}

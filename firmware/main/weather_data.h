@@ -13,9 +13,9 @@
 typedef enum { WX_UNKNOWN, WX_CLEAR, WX_CLOUD, WX_OVERCAST, WX_FOG, WX_RAIN, WX_SNOW, WX_THUNDER } weather_kind_t;
 typedef enum { WX_PROVIDER_UNKNOWN, WX_PROVIDER_OPEN_METEO, WX_PROVIDER_MET } weather_provider_t;
 typedef struct {
-    bool present, wind_present;
+    bool present, wind_present, gust_present;
     int code, interval_s;
-    float temperature_c, wind_mps;
+    float temperature_c, wind_mps, gust_mps; /* Optional 10m model gust, separate from wind. */
     int64_t source_utc, fetched_utc;
     uint64_t fetched_ms;
     weather_provider_t provider;
@@ -26,12 +26,14 @@ typedef struct {
     char date[11];
     int code;
     float high_c, low_c;
-    bool precipitation_present, wind_present, uv_present;
+    bool precipitation_present, wind_present, uv_present, gust_present;
     float precipitation_pct, wind_mps; /* Daily maximum 10m model wind, not gusts. */
     float uv_index; /* Optional daily maximum index; dimensionless, not current UV. */
     int64_t fetched_utc;
     uint64_t fetched_ms;
     weather_provider_t provider;
+    float gust_mps; /* Optional daily maximum 10m model gust; m/s. */
+    bool range_estimated; /* Explicit reference range, never a standard daily extreme. */
 } weather_day_t;
 typedef struct {
     char timezone[64], abbreviation[24];

@@ -4,6 +4,8 @@
 #include "wifi_ui.h"
 #include "network_time.h"
 #include "weather_service.h"
+#include "weather_hint.h"
+#include "../../assets/application/weather_hint_fonts.h"
 #include "location_service.h"
 #include "location_ui.h"
 #include "display_policy.h"
@@ -61,9 +63,11 @@ static lv_obj_t *weather_place,*weather_admin,*weather_clock,*weather_update,*we
 static lv_obj_t *weather_current_wind,*weather_wind_symbol,*weather_wind_separator,*weather_hit,*weather_source_body,*weather_source_license,*weather_source_identity;
 static lv_obj_t *day_date[7],*day_week[7],*day_icon[7],*day_kind[7],*day_range[7],*day_rain[7];
 static lv_obj_t *day_hint_icon[7],*weather_update_icon,*weather_update_state;
-typedef enum { DAY_HINT_UNKNOWN,DAY_HINT_WIND,DAY_HINT_UV,DAY_HINT_RAIN } day_hint_t;
+/* Keep the existing diagnostic kind ids; selection lives in weather_hint.c. */
+typedef enum { DAY_HINT_UNKNOWN,DAY_HINT_WIND,DAY_HINT_UV,DAY_HINT_RAIN,
+    DAY_HINT_GUST,DAY_HINT_RAIN_STRONG,DAY_HINT_FREEZING_RAIN,DAY_HINT_SNOW_STRONG,
+    DAY_HINT_THUNDER,DAY_HINT_HAIL } day_hint_t;
 static day_hint_t day_hint_kind[7];
-#define WEATHER_NOTICE_WIND_GRADE 6 /* First design parameter, not an official warning. */
 static weather_forecast_t forecast;
 /* Reuse UI-owned snapshots under the LVGL lock; do not add a large automatic
  * settings/location copy beneath render or the UI completion callbacks. */
@@ -238,6 +242,7 @@ void app_ui_status(const char *event,uint32_t rid) {
     printf(",\"layout_sample\":%d",layout_sample);
 #endif
     printf(",\"browse_idle_ms\":%"PRIu64",\"home_weather_title\":\"%s\",\"home_weather_value\":\"%s\",\"home_weather_note\":\"%s\",\"weather_update_text\":\"%s\"",now-browse_activity,lv_label_get_text(weather_title),home_weather.text,lv_label_get_text(weather_note),disclose_weather_metadata?lv_label_get_text(weather_update):"");
+    printf(",\"home_weather_highlight\":\"%s\",\"home_weather_highlight_visible\":%s",lv_label_get_text(weather_current_wind),lv_obj_is_hidden(weather_current_wind)?"false":"true");
     printf(",\"lvgl_stack_free_min\":%u",lvgl_stack_free_min);
     printf(",\"alarm_runtime_phase\":%d,\"alarm_runtime_error\":%d,\"alarm_audio_state\":%d,\"alarm_audio_error\":%d,\"alarm_audio_ready\":%s,\"alarm_runtime_blocked\":%s,\"alarm_overlay\":%s,\"alarm_owner_stack_free_min\":%u",alarm_runtime.phase,alarm_runtime.error,alarm_runtime.audio,alarm_runtime.audio_error,alarm_runtime.audio_ready?"true":"false",alarm_runtime.blocked?"true":"false",ring_overlay&&!lv_obj_is_hidden(ring_overlay)?"true":"false",am_service_stack_free_min());
     calendar_runtime_status();
@@ -252,14 +257,15 @@ void app_ui_status(const char *event,uint32_t rid) {
     printf(",\"internal8_free\":%u,\"internal8_min\":%u,\"internal8_largest\":%u,\"dma_free\":%u,\"dma_min\":%u",(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA),(unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA));
     printf(",\"weather_slots\":[");
     for(int i=0;i<7;i++){
-        char high[20]="--",low[20]="--",rain[20]="--";
+        char high[20]="--",low[20]="--",rain[20]="--";bool range_estimated=false;const char *provider="--";
         const weather_forecast_slot_t *slot=&forecast.slots[i];
         if(slot->state==WEATHER_SLOT_USABLE){
             const weather_day_t *d=&wx_status.data.days[slot->data_index];
+            range_estimated=d->range_estimated;provider=weather_provider_name(d->provider);
             snprintf(high,sizeof high,"%.0f",d->high_c);snprintf(low,sizeof low,"%.0f",d->low_c);
             if(d->precipitation_present)snprintf(rain,sizeof rain,"%.0f%%",d->precipitation_pct);
         }
-        printf("%s{\"date\":\"%s\",\"week\":\"%s\",\"kind\":\"%s\",\"high\":\"%s\",\"low\":\"%s\",\"rain\":\"%s\",\"range\":\"%s\",\"precipitation_text\":\"%s\",\"highlight\":\"%s\",\"highlight_kind\":%d}",i?",":"",lv_label_get_text(day_date[i]),lv_label_get_text(day_week[i]),lv_label_get_text(day_kind[i]),high,low,rain,lv_label_get_text(day_range[i]),day_hint_kind[i]==DAY_HINT_RAIN?lv_label_get_text(day_rain[i]):"",lv_label_get_text(day_rain[i]),day_hint_kind[i]);
+        printf("%s{\"date\":\"%s\",\"week\":\"%s\",\"kind\":\"%s\",\"high\":\"%s\",\"low\":\"%s\",\"rain\":\"%s\",\"range\":\"%s\",\"precipitation_text\":\"%s\",\"highlight\":\"%s\",\"highlight_kind\":%d,\"range_estimated\":%s,\"provider\":\"%s\"}",i?",":"",lv_label_get_text(day_date[i]),lv_label_get_text(day_week[i]),lv_label_get_text(day_kind[i]),high,low,rain,lv_label_get_text(day_range[i]),day_hint_kind[i]==DAY_HINT_RAIN?lv_label_get_text(day_rain[i]):"",lv_label_get_text(day_rain[i]),day_hint_kind[i],range_estimated?"true":"false",provider);
     }
     printf("]");
     wifi_ui_status(); weather_status(); location_status(); location_ui_status(); printf("}\n"); funlockfile(stdout);
@@ -295,7 +301,7 @@ static lv_obj_t *image(lv_obj_t *parent,const lv_image_dsc_t *src,int x,int y) {
 typedef struct { int baseline; const lv_font_t *font; uint32_t reference; } home_row_t;
 static const home_row_t title_row={424,&clock_home_font_32,0x5185};
 static const home_row_t value_row={509,&clock_home_font_64,'0'};
-static const home_row_t note_row={554,&clock_home_font_30,0x8212};
+static const home_row_t note_row={554,&clock_font_hint_30,0x8212};
 enum { HOME_LEFT=48, HOME_DIVIDER=421, HOME_INDOOR=458, HOME_HUMIDITY=776,
        HOME_RIGHT=976, HOME_ICON_SIZE=36, HOME_ICON_GAP=12 };
 static lv_obj_t *home_label(const home_row_t *row,const char *text,int x,int width,uint32_t color) {
@@ -327,6 +333,17 @@ static lv_obj_t *home_icon(const home_row_t *row,const lv_image_dsc_t *src,int x
 }
 static int home_text_width(const char *text,const lv_font_t *font){
     lv_point_t size;lv_text_get_size(&size,text,font,0,0,1024,LV_TEXT_FLAG_NONE);return size.x;
+}
+/* The middle-dot ink is centered within its original 30px glyph box.
+ * Center that glyph between the range and next group, not its label origin.
+ * The rounded wind strokes reach their container's left edge. */
+static void home_hint_separator_position(int range_right,bool windy){
+    lv_font_glyph_dsc_t dot;
+    bool found=lv_font_get_glyph_dsc(note_row.font,&dot,0x00b7,0);
+    assert(found);
+    int next_left=lv_obj_get_x(windy?weather_wind_symbol:weather_current_wind);
+    int x=(range_right+next_left-dot.box_w)/2-dot.ofs_x;
+    lv_obj_set_pos(weather_wind_separator,x,lv_obj_get_y(weather_note));
 }
 static void home_reading_set(home_reading_t *r,const char *text){
     if(!r->whole||!strcmp(r->text,text))return;
@@ -842,6 +859,38 @@ static const char *kind_text(int code) {
     static const char *names[]={"未知","晴","多云","阴","雾","雨","雪","雷雨"};
     return names[weather_kind(code)];
 }
+static void weather_hint_text(weather_hint_t hint,bool current,char *out,size_t size) {
+    switch(hint.kind) {
+    case WEATHER_HINT_WIND: snprintf(out,size,current?"风%d级":"%d级",hint.grade);break;
+    case WEATHER_HINT_GUST: snprintf(out,size,"阵风%d级",hint.grade);break;
+    case WEATHER_HINT_RAIN_STRONG: snprintf(out,size,"雨较强");break;
+    case WEATHER_HINT_FREEZING_RAIN: snprintf(out,size,"冻雨");break;
+    case WEATHER_HINT_SNOW_STRONG: snprintf(out,size,"雪较强");break;
+    case WEATHER_HINT_AIR_POOR: snprintf(out,size,"空气欠佳");break;
+    case WEATHER_HINT_THUNDER: snprintf(out,size,"雷电");break;
+    case WEATHER_HINT_HAIL: snprintf(out,size,"冰雹");break;
+    case WEATHER_HINT_UV: snprintf(out,size,"UV 强");break;
+    case WEATHER_HINT_PRECIPITATION:
+        if(hint.probability_present)snprintf(out,size,"%.0f%%",hint.probability_pct);
+        else snprintf(out,size,"—");
+        break;
+    default: snprintf(out,size,"%s",current?"":"—");break;
+    }
+}
+static day_hint_t day_hint_style(weather_hint_kind_t kind) {
+    switch(kind) {
+    case WEATHER_HINT_WIND: return DAY_HINT_WIND;
+    case WEATHER_HINT_GUST: return DAY_HINT_GUST;
+    case WEATHER_HINT_UV: return DAY_HINT_UV;
+    case WEATHER_HINT_PRECIPITATION: return DAY_HINT_RAIN;
+    case WEATHER_HINT_RAIN_STRONG: return DAY_HINT_RAIN_STRONG;
+    case WEATHER_HINT_FREEZING_RAIN: return DAY_HINT_FREEZING_RAIN;
+    case WEATHER_HINT_SNOW_STRONG: return DAY_HINT_SNOW_STRONG;
+    case WEATHER_HINT_THUNDER: return DAY_HINT_THUNDER;
+    case WEATHER_HINT_HAIL: return DAY_HINT_HAIL;
+    default: return DAY_HINT_UNKNOWN;
+    }
+}
 static const lv_image_dsc_t *kind_icon(int code) {
     /* Outdoor solar phase is independent of the room low-light state. */
     if(weather_kind(code)==1&&display_policy.sun.phase==SOLAR_NIGHT)return &weather_home_moon;
@@ -878,28 +927,36 @@ static void render_weather(void) {
     text_if_changed(weather_title,text);
     if(cv)snprintf(text,sizeof text,"%.1f°C",w.data.current.temperature_c);else snprintf(text,sizeof text,"--°C");
     home_reading_set(&home_weather,text);
-    int current_grade=cv&&w.data.current.wind_present?weather_wind_grade(w.data.current.wind_mps):-1;
-    bool current_windy=current_grade>=WEATHER_NOTICE_WIND_GRADE;
-    if(current_windy)snprintf(text,sizeof text,"风%d级",current_grade);else text[0]=0;
-    text_if_changed(weather_current_wind,text);lv_obj_set_hidden(weather_current_wind,!current_windy);
-    lv_obj_set_hidden(weather_wind_symbol,!current_windy);lv_obj_set_hidden(weather_wind_separator,!current_windy);
+    weather_hint_t current_hint=weather_hint_current(&w.data.current,&w.air_quality,utc,now,n.time_valid);
+    bool current_notice=current_hint.kind!=WEATHER_HINT_NONE;
+    bool current_windy=current_hint.kind==WEATHER_HINT_WIND||current_hint.kind==WEATHER_HINT_GUST;
+    weather_hint_text(current_hint,true,text,sizeof text);
+    text_if_changed(weather_current_wind,text);lv_obj_set_hidden(weather_current_wind,!current_notice);
+    lv_obj_set_hidden(weather_wind_symbol,!current_windy);lv_obj_set_hidden(weather_wind_separator,!current_notice);
     const lv_image_dsc_t *src=kind_icon(cv?w.data.current.code:999);
     if(lv_image_get_src(weather_icon)!=src)home_weather_icon_set(src);
     char today_date[11];const weather_day_t *td=weather_day_at(&w.data,0,utc,now,n.time_valid,today_date);
-    if(td)snprintf(text,sizeof text,"%s%.0f～%.0f°",w.injected?"样例 · ":"",td->low_c,td->high_c);
-    else snprintf(text,sizeof text,"%s%s",w.injected?"样例 · ":"",current_windy?"--":reason[0]?reason:"今天高低温暂无");
+    if(td)snprintf(text,sizeof text,"%s%s%.0f～%.0f°",w.injected?"样例 · ":"",td->range_estimated?"约":"",td->low_c,td->high_c);
+    else snprintf(text,sizeof text,"%s%s",w.injected?"样例 · ":"",current_notice?"--":reason[0]?reason:"今天高低温暂无");
     text_if_changed(weather_note,text);
-    int note_width=home_text_width(text,note_row.font),wind_width=current_windy?home_text_width(lv_label_get_text(weather_current_wind),note_row.font):0;
-    int note_limit=current_windy?360-wind_width-66:360;
+    int note_width=home_text_width(text,note_row.font),hint_width=current_notice?home_text_width(lv_label_get_text(weather_current_wind),note_row.font):0;
+    int hint_gap=current_windy?66:32;
+    int note_limit=current_notice?360-hint_width-hint_gap:360;
     lv_obj_set_width(weather_note,note_width>note_limit?note_width:note_limit);
-    lv_obj_set_style_transform_scale_x(weather_note,note_width>note_limit?note_limit*256/note_width:256,0);
+    int note_scale=note_width>note_limit?note_limit*256/note_width:256;
+    lv_obj_set_style_transform_scale_x(weather_note,note_scale,0);
     lv_obj_set_style_transform_pivot_x(weather_note,0,0);
     if(note_width>note_limit)note_width=note_limit;
-    lv_obj_set_pos(weather_wind_separator,HOME_LEFT+note_width+10,lv_obj_get_y(weather_note));
     lv_obj_set_pos(weather_wind_symbol,HOME_LEFT+note_width+32,lv_obj_get_y(weather_note)+8);
-    lv_obj_set_pos(weather_current_wind,HOME_LEFT+note_width+66,lv_obj_get_y(weather_note));
-    lv_obj_set_width(weather_current_wind,current_windy?wind_width:1);
+    lv_obj_set_pos(weather_current_wind,HOME_LEFT+note_width+hint_gap,lv_obj_get_y(weather_note));
+    lv_obj_set_width(weather_current_wind,current_notice?hint_width:1);
+    if(current_notice)home_hint_separator_position(HOME_LEFT+note_width,current_windy);
     weather_forecast_summary(&w.data,utc,now,n.time_valid,&forecast);
+    bool estimated_forecast=false;
+    for(int i=0;i<WEATHER_DAYS;i++) {
+        const weather_forecast_slot_t *slot=&forecast.slots[i];
+        if(slot->state==WEATHER_SLOT_USABLE&&w.data.days[slot->data_index].range_estimated)estimated_forecast=true;
+    }
     const char *refresh=w.fetching?"更新中":!n.connected?"离线":
         w.error!=WX_OK&&w.error!=WX_PARTIAL?"更新失败":"";
     char acquired[24]="--";
@@ -911,6 +968,11 @@ static void render_weather(void) {
     else if(forecast.mixed)snprintf(text,sizeof text,"部分更新 · 最早%s%s",refresh[0]?" · ":"",refresh);
     else if(forecast.usable_count<WEATHER_DAYS)snprintf(text,sizeof text,"预报%u/7%s%s",forecast.usable_count,refresh[0]?" · ":"",refresh);
     else snprintf(text,sizeof text,"%s",refresh);
+    if(estimated_forecast) {
+        static const char prefix[]="参考温区 · ";size_t length=strlen(text),n=sizeof prefix-1;
+        if(!length)snprintf(text,sizeof text,"参考温区");
+        else if(length+n<sizeof text){memmove(text+n,text,length+1);memcpy(text,prefix,n);}
+    }
     if(w.injected){
         /* Keep sample identity and refresh/coverage visible in the narrow footer.
          * Full acquired range remains in Sources when this short form is used. */
@@ -960,7 +1022,7 @@ static void render_weather(void) {
         uint32_t ink=valid?browse_palette->ink:browse_palette->sub;
         lv_obj_set_style_text_color(day_kind[i],lv_color_hex(ink),0);
         lv_obj_set_style_text_color(day_range[i],lv_color_hex(ink),0);
-        if(valid)snprintf(text,sizeof text,"%.0f～%.0f°",d->low_c,d->high_c);else snprintf(text,sizeof text,"--");
+        if(valid)snprintf(text,sizeof text,"%s%.0f～%.0f°",d->range_estimated?"约":"",d->low_c,d->high_c);else snprintf(text,sizeof text,"--");
         text_if_changed(day_range[i],text);
         int x=48+i*928/7,width=(i+1)*928/7-i*928/7,range_width=weather_text_width(text);
         /* Compress only pathological accepted extremes; ordinary ranges retain
@@ -969,41 +1031,41 @@ static void render_weather(void) {
         lv_obj_set_style_transform_scale_x(day_range[i],range_width>width?width*256/range_width:256,0);
         lv_obj_set_style_transform_pivot_x(day_range[i],0,0);
         lv_obj_set_x(day_range[i],x);
-        weather_kind_t kind=valid?weather_kind(d->code):WX_UNKNOWN;
-        bool wet=kind==WX_RAIN||kind==WX_SNOW||kind==WX_THUNDER;
-        int grade=valid&&d->wind_present?weather_wind_grade(d->wind_mps):-1;
-        bool probability=valid&&d->precipitation_present&&isfinite(d->precipitation_pct)&&d->precipitation_pct>=0&&d->precipitation_pct<=100;
-        day_hint_t hint=DAY_HINT_UNKNOWN;snprintf(text,sizeof text,"—");
-        if(grade>=WEATHER_NOTICE_WIND_GRADE){hint=DAY_HINT_WIND;snprintf(text,sizeof text,"%d级",grade);}
-        else if(valid&&weather_uv_strong(d)){hint=DAY_HINT_UV;snprintf(text,sizeof text,"UV 强");}
-        else if(wet&&!probability){hint=DAY_HINT_RAIN;}
-        else if(probability&&(wet||d->precipitation_pct>0)){hint=DAY_HINT_RAIN;snprintf(text,sizeof text,"%.0f%%",d->precipitation_pct);}
-        else if(grade>=0){hint=DAY_HINT_WIND;snprintf(text,sizeof text,"%d级",grade);}
+        weather_hint_t selected=weather_hint_day(d,utc,now,n.time_valid);
+        day_hint_t hint=day_hint_style(selected.kind);weather_hint_text(selected,false,text,sizeof text);
         day_hint_kind[i]=hint;text_if_changed(day_rain[i],text);
-        bool graphic=hint==DAY_HINT_WIND||hint==DAY_HINT_RAIN;
+        bool wind_graphic=hint==DAY_HINT_WIND||hint==DAY_HINT_GUST;
+        bool graphic=wind_graphic||hint==DAY_HINT_RAIN;
         lv_obj_set_hidden(day_hint_icon[i],!graphic);
-        lv_obj_set_hidden(lv_obj_get_child(day_hint_icon[i],0),hint!=DAY_HINT_WIND);
+        lv_obj_set_hidden(lv_obj_get_child(day_hint_icon[i],0),!wind_graphic);
         lv_obj_set_hidden(lv_obj_get_child(day_hint_icon[i],1),hint!=DAY_HINT_RAIN);
-        lv_point_t size;lv_text_get_size(&size,text,&clock_font_weather_24,0,0,1024,LV_TEXT_FLAG_NONE);
+        lv_point_t size;lv_text_get_size(&size,text,&clock_font_hint_24,0,0,1024,LV_TEXT_FLAG_NONE);
         int group_width=size.x+(graphic?28:0),left=x+(width-group_width)/2;
         lv_obj_set_pos(day_hint_icon[i],left,379);
         lv_obj_set_pos(day_rain[i],left+(graphic?28:0),374);lv_obj_set_width(day_rain[i],size.x);
         lv_obj_set_pos(day_kind[i],x,332);lv_obj_set_width(day_kind[i],width);
     }
     /* Detail scratch is static: long metadata is never added to the LVGL stack. */
-    static char details[2048];char first[32]="--",last[32]="--";
+    static char details[3072];char first[32]="--",last[32]="--",aq_source[24]="--",aq_fetch[24]="--";
     if(forecast.usable_count){
         weather_time(forecast.oldest_fetched_utc,w.data.offset_s,"%Y-%m-%d %H:%M",first,sizeof first);
         weather_time(forecast.newest_fetched_utc,w.data.offset_s,"%Y-%m-%d %H:%M",last,sizeof last);
     }
-    snprintf(details,sizeof details,"%s当前天气：%s\n预报：可用%u/7，缺失%u，过期%u%s\n%s\n取得范围：%s 至 %s\n静态更新图形与时间表示设备成功取得记录，并非模型发布时间；不是刷新按钮。\n日期依据：%s\n每日一项：6级起较强风、UV 强、降水概率、普通风、未知。不是官方预警。\n雨滴表示当日最大降水概率，含雨雪；雨雪或雷雨的有效0%%仍保留，未知用横线表示。\nUV 强：当日最大紫外线指数达到6（WHO/EPA高等级起点），非当前夜晚实测；缺失不推算。\n风：10米模型参考风级，0-17级；非实测、阵风或官方预警。\n日最大风：该地点日期内小时风速的最大值。\n风速以m/s取得并保留，按0.1m/s精度半向上分级。\n逐日取得状态：",
+    bool aq_valid=air_quality_valid(&w.air_quality,utc,now,n.time_valid);
+    if(w.air_quality.present) {
+        weather_time(w.air_quality.source_utc,0,"%m/%d %H:%M",aq_source,sizeof aq_source);
+        weather_time(w.air_quality.fetched_utc,0,"%m/%d %H:%M",aq_fetch,sizeof aq_fetch);
+    }
+    snprintf(details,sizeof details,"%s当前天气：%s\n预报：可用%u/7，缺失%u，过期%u%s\n%s\n取得范围：%s 至 %s\n静态更新图形与时间表示设备成功取得记录，并非模型发布时间；不是刷新按钮。\n日期依据：%s\n每日一项依次为：更强风(稳风8级/阵风9级起)、冻雨、冰雹、雷雨(显示雷电)、较强雨雪、较强风(稳风6级/阵风7级起)、UV 强、降水概率、普通风、未知。不是官方预警。\n雨滴表示当日最大降水概率，含雨雪；普通雨雪的有效0%%仍保留，未知用横线表示。\nUV 强：当日最大紫外线指数达到6，非当前夜晚实测；缺失不推算。\n风：10米模型参考风级，非实测；各档稳风/阵风过门后取较高级数，同级稳风优先。冻雨含天气码56/57的冻毛毛雨；只按实际天气码提示。\n日最大风：标准源为日最大模型风；MET参考日为离散样本最大风，非连续日最大；阵风独立保留。\n风速以m/s取得，按0.1m/s精度半向上分级。\n参考温区：MET未来完整日采样温度范围，并非标准日高低温；约表示参考温区，今天不完整不补。\n空气质量：%s，CAMS全球模型 / Open-Meteo。\n美标AQI>100显示空气欠佳；非中国AQI、本地测量或官方预警。\n每3小时取数，独立取得有效期%u小时；仅当前小时的模型值可用。\n空气有效时刻UTC %s；取得UTC %s。\n逐日来源与取得状态：",
         w.injected?"开发样例，非实时读数。\n":"",!n.time_valid?"待校时":cv?"可用":w.data.current.present?"已过期":"暂无",
         forecast.usable_count,forecast.missing_count,forecast.expired_count,forecast.mixed?"，部分更新":"",refresh[0]?refresh:"本次未在刷新",
-        first,last,forecast.time_known?location_weather_date_basis(w.data.timezone):n.time_valid?"等待天气日期":"等待校时");
+        first,last,forecast.time_known?location_weather_date_basis(w.data.timezone):n.time_valid?"等待天气日期":"等待校时",
+        aq_valid?"可用":w.air_quality.present?"已过期":"暂无",(unsigned)(AIR_QUALITY_MAX_AGE/3600),aq_source,aq_fetch);
     for(int i=0;i<WEATHER_DAYS;i++){
         const weather_forecast_slot_t *slot=&forecast.slots[i];char at[32]="--";
-        if(slot->data_index>=0)weather_time(w.data.days[slot->data_index].fetched_utc,w.data.offset_s,"%m/%d %H:%M",at,sizeof at);
-        size_t used=strlen(details);snprintf(details+used,sizeof details-used,"\n%s %s 取得%s",slot->date[0]?slot->date:"--",forecast_slot_text(slot->state),at);
+        const weather_day_t *d=slot->data_index>=0?&w.data.days[slot->data_index]:NULL;
+        if(d)weather_time(d->fetched_utc,w.data.offset_s,"%m/%d %H:%M",at,sizeof at);
+        size_t used=strlen(details);snprintf(details+used,sizeof details-used,"\n%s %s %s %s 取得%s",slot->date[0]?slot->date:"--",forecast_slot_text(slot->state),d?weather_provider_name(d->provider):"--",d?(d->range_estimated?"参考温区":"日高低温"):"--",at);
     }
     text_if_changed(weather_notice,details);
 }
@@ -1154,7 +1216,7 @@ static void create_ui(void) {
     weather_icon=image(home,&weather_home_cloudunknown,318,450);home_weather_icon_set(&weather_home_cloudunknown);
     weather_current_wind=home_label(&note_row,"",HOME_LEFT,1,0x778994);
     lv_label_set_long_mode(weather_current_wind,LV_LABEL_LONG_CLIP);lv_obj_set_hidden(weather_current_wind,true);
-    weather_wind_separator=home_label(&note_row,"·",HOME_LEFT,16,0x778994);
+    weather_wind_separator=home_label(&note_row,"·",HOME_LEFT,home_text_width("·",note_row.font),0x778994);
     weather_wind_symbol=wind_symbol(home);
     lv_obj_set_hidden(weather_wind_separator,true);lv_obj_set_hidden(weather_wind_symbol,true);
     weather_hit=box(home,40,384,365,184,0);
@@ -1192,9 +1254,10 @@ static void create_ui(void) {
         day_icon[i]=image(weather_page,&weather_forecast_cloudunknown,x+(width-80)/2,237);
         day_kind[i]=day_label(i,332,0xc4d1d8);
         day_rain[i]=day_label(i,374,0x9caebc);
-        lv_obj_set_style_text_font(day_rain[i],&clock_font_weather_24,0);lv_obj_set_height(day_rain[i],32);
+        lv_obj_set_style_text_font(day_rain[i],&clock_font_hint_24,0);lv_obj_set_height(day_rain[i],32);
         day_hint_icon[i]=hint_graphic(weather_page,false);
         day_range[i]=day_label(i,418,0xc4d1d8);
+        lv_obj_set_style_text_font(day_range[i],&clock_font_hint_28,0);
     }
     weather_update_state=label(weather_page,"",48,540,&clock_font_28,0x778994);
     lv_obj_set_width(weather_update_state,374);lv_label_set_long_mode(weather_update_state,LV_LABEL_LONG_DOT);
@@ -1207,9 +1270,9 @@ static void create_ui(void) {
     weather_sources=box(scr,0,0,1024,600,0);child_header(weather_sources,"返回","天气来源与许可",9);
     weather_source_body=box(weather_sources,48,130,928,414,0);lv_obj_set_scrollable(weather_source_body,true);
     lv_obj_set_scroll_dir(weather_source_body,LV_DIR_VER);lv_obj_set_scrollbar_mode(weather_source_body,LV_SCROLLBAR_MODE_AUTO);
-    weather_source_license=label(weather_source_body,"Open-Meteo · https://open-meteo.com/\nMET Norway · https://api.met.no/ · CC BY 4.0\nGeoNames · https://www.geonames.org/ · CC BY 4.0\nhttps://creativecommons.org/licenses/by/4.0/\nWikidata · CC0；内政部地政司2026地名 · OGDL 1.0\nhttps://data.gov.tw/dataset/40281 · https://data.gov.tw/license\n天气为地点参考数据；本机筛选、格式化与图标映射。",0,0,&clock_font_28,0x778994);
+    weather_source_license=label(weather_source_body,"Open-Meteo · https://open-meteo.com/\nCAMS ENSEMBLE data provider · https://atmosphere.copernicus.eu/\nMET Norway · https://api.met.no/ · CC BY 4.0\nGeoNames · https://www.geonames.org/ · CC BY 4.0\nhttps://creativecommons.org/licenses/by/4.0/\nWikidata · CC0；内政部地政司2026地名 · OGDL 1.0\nhttps://data.gov.tw/dataset/40281 · https://data.gov.tw/license\n天气为地点参考数据；本机筛选、格式化与图标映射。",0,0,&clock_font_hint_28,0x778994);
     weather_source_identity=label(weather_source_body,"",0,0,&clock_font_28,0x778994);
-    weather_notice=label(weather_source_body,"",0,0,&clock_font_28,0x778994);
+    weather_notice=label(weather_source_body,"",0,0,&clock_font_hint_28,0x778994);
     weather_zone=label(weather_source_body,"天气时区 尚未取得",0,0,&clock_font_28,0x778994);
     lv_obj_t *source_labels[]={weather_source_license,weather_source_identity,weather_notice,weather_zone};
     for(unsigned i=0;i<4;i++){lv_obj_set_width(source_labels[i],900);lv_label_set_long_mode(source_labels[i],LV_LABEL_LONG_WRAP);}

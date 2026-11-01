@@ -1,6 +1,7 @@
 #pragma once
 #include "weather_data.h"
 #include "weather_schedule.h"
+#include "air_quality.h"
 typedef struct {
     bool configured, development_test, fetching, injected;
     double latitude, longitude;
@@ -15,6 +16,14 @@ typedef struct {
     int primary_http, backup_http;
     weather_error_t primary_error, backup_error;
     bool backup_configured, backup_attempted, backup_cached, primary_injected;
+    unsigned backup_days;
+    uint32_t backup_daily_successes;
+    air_quality_current_t air_quality;
+    uint32_t air_quality_attempts,air_quality_successes;
+    int air_quality_http,air_quality_transport,air_quality_bytes;
+    weather_error_t air_quality_error;
+    bool air_quality_fetching;
+    uint64_t air_quality_attempted_ms,air_quality_finished_ms,air_quality_next_due_ms;
     weather_data_t data;
 } weather_state_t;
 void weather_start(void);

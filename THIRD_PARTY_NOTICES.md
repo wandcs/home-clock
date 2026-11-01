@@ -40,6 +40,7 @@ ESP-IDF 6.1和19个固定注册表组件由构建环境/组件管理器取得，
 ## 在线天气服务
 
 - [Open-Meteo](https://open-meteo.com/)：数据许可、[署名](https://open-meteo.com/en/licence)及[服务条款](https://open-meteo.com/en/terms)分别适用。免费端点仅适用于其条款允许的非商业用途，商业使用需选择相应服务；项目MIT不改变这些限制。
+- 空气质量由[Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api)提供，本项目选用CAMS Global模型。按接口的[署名要求](https://open-meteo.com/en/docs/air-quality-api#citation--acknowledgement)保留Open-Meteo及CAMS ENSEMBLE数据提供方归属；全球模型来源另见[Copernicus CAMS ADS](https://ads.atmosphere.copernicus.eu/datasets/cams-global-atmospheric-composition-forecasts?tab=overview)。它是模型参考，不是中国监测站AQI或官方霾预警，免费接口仍受非商业服务条款约束。
 - [MET Norway](https://api.met.no/)：按[接口使用要求](https://api.met.no/doc/TermsOfService)提供可联系的User-Agent并遵守数据归属要求。数据另遵守[MET列明的来源许可](https://api.met.no/doc/License)，包括NLOD2.0和CC BY4.0的归属要求。公共构建默认不带维护者的联系信息，由使用者显式配置后才启用。
 
 本清单记录实际来源与分发义务，不把软件、数据和在线服务当作同一种授权。
