@@ -1,5 +1,5 @@
 {
-  "file_count": 257,
+  "file_count": 271,
   "files": {
     ".gitattributes": {
       "bytes": 697,
@@ -486,12 +486,12 @@
       "sha256": "72ecf9343efeb995fd5444dc72005b8c4a70124be344e42beb0db47099b2adbd"
     },
     "firmware/features/alarm-audio/alarm_bsp.c": {
-      "bytes": 11591,
-      "sha256": "900c2b01620f4bf0eaaabf16caee4ec8c6fa9642ad5719f2e3ac7346189615ca"
+      "bytes": 13972,
+      "sha256": "79538c4056aa59c6621c65a39195af83ffaabf3bfd29ca4184b64f80ed24490d"
     },
     "firmware/features/alarm-audio/alarm_bsp.h": {
-      "bytes": 1571,
-      "sha256": "d0c8e27b88b45adc24ae1efc3658590edfa5ed7998bbec210477cb7bca294ebf"
+      "bytes": 1784,
+      "sha256": "6844b4cf4bff9805b84679d97a578919f06a6c83582fa35e2212a6368adb1c26"
     },
     "firmware/features/alarm-audio/alarm_player.c": {
       "bytes": 6146,
@@ -682,8 +682,8 @@
       "sha256": "74feeb7000f32011cf90d59a37550215d8d587ae503697b5a13e980fe3116b54"
     },
     "firmware/main/app_ui.c": {
-      "bytes": 103322,
-      "sha256": "b5a63016e1075e3a3a097172110c82445f7815b0a20d1709c9fdc31bdd59dcd6"
+      "bytes": 103564,
+      "sha256": "8eaca4c95444d78926273e9612cef7d87b1e236bb64fcada0cb68a2322d17aca"
     },
     "firmware/main/app_ui.h": {
       "bytes": 281,
@@ -877,6 +877,10 @@
       "bytes": 5155,
       "sha256": "e62d48e6c49812208d9f83a04c4667527f7405476ee703eec7e50f03a5b1714e"
     },
+    "tools/alarm-audio/check-streaming.py": {
+      "bytes": 3380,
+      "sha256": "291ab48ce640e5e7d7f6546a9183adc9e31cc466d06a0d7e3b748836ec62e6c0"
+    },
     "tools/alarm-audio/generate.py": {
       "bytes": 2773,
       "sha256": "4c308a51db71a5e84661a547b32ce3f2e8c145673ec2adb20dd513edc45ed4e5"
@@ -905,6 +909,58 @@
       "bytes": 136,
       "sha256": "aac8c78940b013251cf963d9b5b70d094679ecd325ef6e5714f06f0a4ab70af3"
     },
+    "tools/alarm-output-readiness/stubs/aa_host.h": {
+      "bytes": 3336,
+      "sha256": "7d27b76b9bf15be09d15ddafe063af39c59b481f0057d964c7f400e27bfd02c7"
+    },
+    "tools/alarm-output-readiness/stubs/bsp/esp32_p4_wifi6_touch_lcd_7b.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/stubs/driver/gpio.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/stubs/driver/i2s_std.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/stubs/esp_codec_dev.h": {
+      "bytes": 641,
+      "sha256": "53395d5000c73a913ac151c858f638bfc0cec0e9b6c2bf01a8d3bae28ce4e74d"
+    },
+    "tools/alarm-output-readiness/stubs/esp_codec_dev_defaults.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/stubs/esp_codec_dev_vol.h": {
+      "bytes": 438,
+      "sha256": "1f70e3b1fc65859ebf51339b188e312fa40d0851843e51eb6c0734825e782116"
+    },
+    "tools/alarm-output-readiness/stubs/esp_heap_caps.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/stubs/esp_timer.h": {
+      "bytes": 54,
+      "sha256": "77539eec139bbeab6471cbe03114aeccd295eccf06b1f083aa26c7db5c0bca71"
+    },
+    "tools/alarm-output-readiness/stubs/freertos/FreeRTOS.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/stubs/freertos/idf_additions.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/stubs/freertos/task.h": {
+      "bytes": 21,
+      "sha256": "2739e5f833c91b9f8ccd4e9cc0a155190e8cfbb926f11d85ca8460250c48933d"
+    },
+    "tools/alarm-output-readiness/test_bsp.c": {
+      "bytes": 9462,
+      "sha256": "109d83e63e4ba3542b6b303bf97855c59b1de72ab0899f7b3da9378d192b0081"
+    },
     "tools/brightness-policy/test_policy.c": {
       "bytes": 11276,
       "sha256": "796674bb657bb08be2393a51f0d198a6223fec04e48f917ec9f3e5f4c9f9e7c9"
@@ -922,8 +978,8 @@
       "sha256": "4cbdc0d4652029adda86067fa2faf42921946ac5841f19084741f9321cef004e"
     },
     "tools/export-source.py": {
-      "bytes": 7148,
-      "sha256": "adacb1db25feac980de1e784f77cf354fd2f76b0094a6a20bd86129ed225a536"
+      "bytes": 7274,
+      "sha256": "75c87f1df8db552f5786c0f61e03e23f5adb9fab69484e1ce3eac9fee5d987f5"
     },
     "tools/generate-home-assets.py": {
       "bytes": 9388,
@@ -1032,5 +1088,5 @@
   },
   "privacy_check": "bounded text patterns; known binary resources excluded; other selected UTF8 text scanned; not a guarantee against every possible secret",
   "scope": "reviewed product snapshot; no Git history, local config, SDK, build outputs or device evidence",
-  "source_commit": "91647f4cf5bb6e2c10716ec0eeef796485021fd7"
+  "source_commit": "5d7442bf70cf2588cb86c2e285531c672b9b8ccc"
 }

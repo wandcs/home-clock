@@ -6,6 +6,7 @@
 #include "esp_codec_dev_defaults.h"
 #include "esp_codec_dev_vol.h"
 #include "esp_heap_caps.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/idf_additions.h"
@@ -16,6 +17,11 @@
     !CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 #error "Audio external stack requires the reviewed IDF6.1 PSRAM XiP configuration"
 #endif
+
+/* The locked LVGL default is 6. A task printing while holding its mutex can
+ * inherit that priority; the real-time producer must still refill the DMA. */
+_Static_assert(AA_WORKER_PRIORITY > ESP_LV_ADAPTER_DEFAULT_TASK_PRIORITY,
+               "Audio must preempt the reviewed LVGL/mutex-owner priority");
 
 /* One permanent owner: no RX/microphone and no BSP hidden duplex channels.
  * Handles survive until reboot, even partial setup failure. No unbounded
@@ -28,6 +34,14 @@ static atomic_uint configured, worker_active, exit_requested, ready;
 static atomic_uint preparation, preparation_error, mute_readback, volume_readback;
 static atomic_uint dac_register, dma_data_bytes;
 static atomic_uint worker_stack_free_min, normal_blocks, written_samples;
+/* Worker-only clocks; snapshots are atomics, with no logging on the feed path. */
+static int64_t pump_started_us, stream_last_write_end_us;
+static atomic_uint feed_gap_max_us, feed_gap_over_20ms, render_max_us, write_max_us, stream_frames;
+static void record_max(atomic_uint *value, int64_t elapsed)
+{
+    unsigned bounded = elapsed > UINT32_MAX ? UINT32_MAX : elapsed > 0 ? (unsigned)elapsed : 0;
+    if (bounded > atomic_load(value)) atomic_store(value, bounded);
+}
 static portMUX_TYPE amp_lock = portMUX_INITIALIZER_UNLOCKED;
 static bool pa_on; /* amp_lock only */
 static unsigned cutoff_count, cutoff_failures; /* amp_lock only */
@@ -78,10 +92,25 @@ static aa_result put(void *ctx, int16_t *data, size_t count, size_t *accepted)
     *accepted = 0;
     if (!opened || count > AA_BLOCK) { io_failed = true; return AA_WRITE_ERROR; }
     size_t bytes = 0;
+    bool streaming = aa_status(&player, NULL) == AA_WRITING;
+    int64_t write_started_us = esp_timer_get_time();
+    if (streaming) {
+        record_max(&render_max_us, write_started_us - pump_started_us);
+        if (stream_last_write_end_us) {
+            int64_t gap = write_started_us - stream_last_write_end_us;
+            record_max(&feed_gap_max_us, gap);
+            if (gap > 20000) atomic_fetch_add(&feed_gap_over_20ms, 1);
+        }
+    }
     /* IDF timeout is per driver wait, not a hard total-call deadline. PA cutoff
      * is independent of it. Actual byte count is checked, never replayed. */
     esp_err_t err = i2s_channel_write(tx, data, count * sizeof(*data), &bytes, 40);
     *accepted = bytes / sizeof(*data);
+    if (streaming) {
+        stream_last_write_end_us = esp_timer_get_time();
+        record_max(&write_max_us, stream_last_write_end_us - write_started_us);
+        atomic_fetch_add(&stream_frames, (unsigned)*accepted);
+    }
     atomic_fetch_add(&written_samples, (unsigned)*accepted);
     if (err != ESP_OK) {
         io_failed = true;
@@ -200,14 +229,25 @@ static void worker(void *unused)
         atomic_store(&player.error, result);
         atomic_store(&player.state, AA_FAILED);
     }
+    atomic_store(&worker_stack_free_min, uxTaskGetStackHighWaterMark(NULL));
+    unsigned previous_state = aa_status(&player, NULL);
     for (;;) {
         if (atomic_load(&exit_requested)) aa_stop(&player);
+        pump_started_us = esp_timer_get_time();
         aa_pump(&player);
         unsigned state = aa_status(&player, NULL);
+        if (state != AA_PLAYING) stream_last_write_end_us = 0;
         if (state == AA_FAILED) atomic_store(&ready, false);
-        atomic_store(&worker_stack_free_min, uxTaskGetStackHighWaterMark(NULL));
-        if (atomic_load(&exit_requested) && (state == AA_IDLE || state == AA_FAILED)) break;
-        vTaskDelay(1);
+        if (state != AA_PLAYING) {
+            /* Stack scanning and idle polling are outside the real-time feed.
+             * While playing, i2s_channel_write waits for DMA queue capacity and
+             * supplies the pacing; an extra sleep only spends refill margin. */
+            if (state != previous_state)
+                atomic_store(&worker_stack_free_min, uxTaskGetStackHighWaterMark(NULL));
+            if (atomic_load(&exit_requested) && (state == AA_IDLE || state == AA_FAILED)) break;
+            vTaskDelay(1);
+        }
+        previous_state = state;
     }
     aa_stop(&player);
     atomic_store(&ready, false);
@@ -225,7 +265,7 @@ aa_result aa_bsp_startup(void)
     gpio_config_t gpio = { .pin_bit_mask = UINT64_C(1) << BSP_POWER_AMP_IO,
                           .mode = GPIO_MODE_INPUT_OUTPUT };
     if (gpio_config(&gpio) != ESP_OK || cutoff(NULL) != AA_OK ||
-        xTaskCreateWithCaps(worker, "alarm-audio", AA_WORKER_STACK, NULL, 3, NULL,
+        xTaskCreateWithCaps(worker, "alarm-audio", AA_WORKER_STACK, NULL, AA_WORKER_PRIORITY, NULL,
                             MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT) != pdPASS) {
         atomic_store(&preparation_error, AA_OPEN_ERROR);
         atomic_store(&preparation, AA_PREP_FAILED);
@@ -250,6 +290,9 @@ void aa_bsp_diagnostics(aa_bsp_diagnostic *out)
         .codec_volume = AA_ENGINEERING_VOLUME, .dac_register = atomic_load(&dac_register),
         .dma_data_bytes = atomic_load(&dma_data_bytes), .worker_stack_free_min = atomic_load(&worker_stack_free_min),
         .normal_blocks = atomic_load(&normal_blocks), .written_samples = atomic_load(&written_samples),
+        .feed_gap_max_us = atomic_load(&feed_gap_max_us), .feed_gap_over_20ms = atomic_load(&feed_gap_over_20ms),
+        .render_max_us = atomic_load(&render_max_us), .write_max_us = atomic_load(&write_max_us),
+        .stream_frames = atomic_load(&stream_frames),
         .preparation_error = atomic_load(&preparation_error) };
     portENTER_CRITICAL(&amp_lock);
     out->pa_on = pa_on; out->cutoff_count = cutoff_count; out->cutoff_failures = cutoff_failures;
