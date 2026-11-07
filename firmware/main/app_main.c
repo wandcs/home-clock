@@ -1,4 +1,5 @@
 #include "app_state.h"
+#include "network_memory.h"
 #include "app_ui.h"
 #include "sensors.h"
 #include "network_time.h"
@@ -15,6 +16,7 @@
 #include "bsp/esp-bsp.h"
 
 void app_main(void) {
+    ESP_ERROR_CHECK(network_memory_start());
     app_state_init();
     weather_start();
     location_start();

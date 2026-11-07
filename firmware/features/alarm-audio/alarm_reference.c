@@ -5515,3 +5515,4 @@ const int16_t aa_reference[AA_PERIOD] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,
 };
+const uint32_t aa_reference_count = AA_PERIOD;

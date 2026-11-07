@@ -1,5 +1,5 @@
 {
-  "file_count": 228,
+  "file_count": 257,
   "files": {
     ".gitattributes": {
       "bytes": 697,
@@ -50,8 +50,8 @@
       "sha256": "c82207a18cac6cd615fe2ea7d1a6ea1aa3ca9f2ee35ba14420b7a404cc8c6e04"
     },
     "THIRD_PARTY_NOTICES.md": {
-      "bytes": 4555,
-      "sha256": "bc08fe53d3b182d92518e04b2718d9b82e99bde96f2eb9f5dcbc3f5ae7d62fa0"
+      "bytes": 4771,
+      "sha256": "c0f64ad81a52cefe18d59f1710a4d24b64872d0aa9f6f3ee34f86fbe6e68b4b3"
     },
     "assets/alarm-audio/README.md": {
       "bytes": 972,
@@ -306,16 +306,16 @@
       "sha256": "c7d9881dd88afcefba5756c3403326ce88f2e7c9c0ba73e84305b7dc764a7dea"
     },
     "assets/weather-background/fields.c": {
-      "bytes": 3981570,
-      "sha256": "7e90ae9a07c27b29864a2fb1c7752bc4677069cbacd5a3029dddd27494d4d5df"
+      "bytes": 3943848,
+      "sha256": "68d89532596d6c94abdff667db1cef5efdc2e3f0a8a456fb5d71a5f13b79104a"
     },
     "assets/weather-background/fields.h": {
-      "bytes": 674,
-      "sha256": "72118b5622ffd5b5fe8fb949e22b0c9182da91f0a544c6e0461cb91dec6be1be"
+      "bytes": 652,
+      "sha256": "0097c10a7574328efc5f85d0ae8635b5b542631d8d875d2c3b0e72f664be04f8"
     },
     "assets/weather-background/manifest.json": {
-      "bytes": 3894,
-      "sha256": "322dea5c07ece20868f6faab4f13a0e087e3fa5b383bb6de596224cf3d694f14"
+      "bytes": 3720,
+      "sha256": "5474f773731749a1e6fecb51c196c3b39671e06af9abffed56cac590cff39dba"
     },
     "components/waveshare__esp32_p4_wifi6_touch_lcd_7b/.gitattributes": {
       "bytes": 265,
@@ -382,20 +382,20 @@
       "sha256": "9c8566af749cf9861847d9d85c4d23e0da6475643b5a52dbe2eeee99e7d69800"
     },
     "docs/architecture.md": {
-      "bytes": 3075,
-      "sha256": "47abae67248fcf08add27224a1b42745f1d508f93fe7eff0d85ac79bee237db5"
+      "bytes": 3536,
+      "sha256": "01e8bce09d99c0cf3d1656ca53eacbb0ff00b2180514dea1da27d87d16513bae"
     },
     "docs/building.md": {
-      "bytes": 7730,
-      "sha256": "88b5c69a4cba473d461afa6d6755600fcaae20229b6fe1c249316813ad73b5b9"
+      "bytes": 10131,
+      "sha256": "58c31ad2d6490f393df24cfc40c0c0166310284806cca674684378e2b4e11c16"
     },
     "docs/getting-started.md": {
       "bytes": 2221,
       "sha256": "602738be7c73a4361e9974dc5ab0f52d098666c77b260b7cb8f172babb2fb1b4"
     },
     "docs/hardware.md": {
-      "bytes": 1579,
-      "sha256": "400842de633e9e60fd8f6f6ad913496d7207b5ccdeeb5e86aa62bd4beafe27a1"
+      "bytes": 2017,
+      "sha256": "56927350a352caff9b27c077de95e0260368f136f31eff287c557359dda729ba"
     },
     "docs/images/alarms.png": {
       "bytes": 69614,
@@ -430,16 +430,16 @@
       "sha256": "a979b0480572f9851925a0f05045de317cf4ae4fc83000aa51af176e65bbb9a1"
     },
     "docs/usage.md": {
-      "bytes": 3144,
-      "sha256": "f0bf0c9acb5b59ac58141b00d06741e4dc72f76f7a0d1d99928b0213a1198bcb"
+      "bytes": 3509,
+      "sha256": "2e84cd09753cb41ba9e2073a3da471be01cf32501a88f989ec4bf2d74658c96d"
     },
     "firmware/.gitignore": {
       "bytes": 20,
       "sha256": "abeed79d0a45ab598f5807113157ab9198fdaa27b917353dd2fe43c6e7dfdc2f"
     },
     "firmware/CMakeLists.txt": {
-      "bytes": 401,
-      "sha256": "8caf5ff08b4b14b5cf040838be00cf7ca870e7c2e6282dd0eb1f1d3092933b38"
+      "bytes": 514,
+      "sha256": "02b03d39560c62b722f0ad5e2b1499b93d145a22ecc0828968bc70960bed7697"
     },
     "firmware/core/alarm_core.c": {
       "bytes": 5510,
@@ -482,8 +482,8 @@
       "sha256": "19eef7e3717ededd896d0ea3a73f0f46b44f323294dc8fa36401eec09a2728d5"
     },
     "firmware/features/alarm-audio/alarm_audio.h": {
-      "bytes": 3263,
-      "sha256": "47ea98540fbdf5c08129fce9330e4e08e33010dc8a8a2d688dfa055c2abcd73e"
+      "bytes": 3384,
+      "sha256": "72ecf9343efeb995fd5444dc72005b8c4a70124be344e42beb0db47099b2adbd"
     },
     "firmware/features/alarm-audio/alarm_bsp.c": {
       "bytes": 11591,
@@ -498,12 +498,12 @@
       "sha256": "1dffb804ed891f7012fcd89507be6ff6da4dc1eed19cd3c348c108c3523c4395"
     },
     "firmware/features/alarm-audio/alarm_reference.c": {
-      "bytes": 395196,
-      "sha256": "52f15ede50180b9e51ed727ff29bcedc20458eaa7f9b4802e2588aed4747dc98"
+      "bytes": 395243,
+      "sha256": "152513c7334abd83dc0d4c4ec57eba0e4a7b821c346b72c65b712b15a71de4ab"
     },
     "firmware/features/alarm-audio/alarm_source.c": {
-      "bytes": 1743,
-      "sha256": "27e56f28f6ba8809698b90e16d29851c69777c9ceea8615b6ac883a654c50f6e"
+      "bytes": 1752,
+      "sha256": "ad7e9716b42cf73a27e6362589450a0d5e52f2220412aae0b04a3a60eb5d00d7"
     },
     "firmware/features/alarm-management/.gitattributes": {
       "bytes": 59,
@@ -602,8 +602,8 @@
       "sha256": "6bc3a22fdb8f0af915c755a794f07e5703389071c6aad3e787e0eddd07e8c898"
     },
     "firmware/features/calendar-client/calendar_http.c": {
-      "bytes": 3485,
-      "sha256": "5446d09e896fa90e9d18c5fe3f63654f9b7fb49f8cdfb0b6d1dbf1c4cae99bd2"
+      "bytes": 4643,
+      "sha256": "6d2767daa8c08443b91f1112e0f123977a3766b2963e3f48ece9bd69af6b7d21"
     },
     "firmware/features/calendar-client/calendar_http.h": {
       "bytes": 799,
@@ -654,8 +654,8 @@
       "sha256": "60636ff8293c31e4b06aecdfac4c582bc2b079f53b370c34da8a83814b540253"
     },
     "firmware/main/CMakeLists.txt": {
-      "bytes": 5602,
-      "sha256": "9962a6c385e90f779cb8de9f5077636fa804817d3abaf8643a4fbb68bbabce85"
+      "bytes": 5893,
+      "sha256": "b1c3455a2958c3793e831d4f3a3ade1dd65de3c86649552a0d1f2f9963ed8465"
     },
     "firmware/main/Kconfig.projbuild": {
       "bytes": 357,
@@ -670,8 +670,8 @@
       "sha256": "bf0411216a4c3948cc3dd5c732a4f395f1468f18246dee42b72d46c3be9a7504"
     },
     "firmware/main/app_main.c": {
-      "bytes": 3246,
-      "sha256": "f31eaba42e67283d27b534dae5ab7cd553eb548353fec9fd134c66e273944605"
+      "bytes": 3319,
+      "sha256": "803ea73fe26c208fe646e47494bebe36a6406ee5ef32e808975f7fe101afdf7c"
     },
     "firmware/main/app_state.c": {
       "bytes": 2583,
@@ -682,8 +682,8 @@
       "sha256": "74feeb7000f32011cf90d59a37550215d8d587ae503697b5a13e980fe3116b54"
     },
     "firmware/main/app_ui.c": {
-      "bytes": 101453,
-      "sha256": "d5de05e7006d4bde8ddcd3cb681eb4e02d8ad402a3c4b34b7c7f410dd5da97d1"
+      "bytes": 103322,
+      "sha256": "b5a63016e1075e3a3a097172110c82445f7815b0a20d1709c9fdc31bdd59dcd6"
     },
     "firmware/main/app_ui.h": {
       "bytes": 281,
@@ -757,6 +757,14 @@
       "bytes": 914,
       "sha256": "434554eae78f4f2db230c02b9e220fb7e33cba57859542b793be51e909f3a386"
     },
+    "firmware/main/network_memory.c": {
+      "bytes": 1217,
+      "sha256": "3046c6c216a56db5333f0e9b521ab7cdab893d0cd71b518c77c1a0d6342cea4a"
+    },
+    "firmware/main/network_memory.h": {
+      "bytes": 521,
+      "sha256": "9ec6ff6f9bb32ba071a3faa733e3cf4de7b6804d4d0439b7d2e67345bb803f76"
+    },
     "firmware/main/network_time.c": {
       "bytes": 28186,
       "sha256": "3cb12e5f58e063bc68cc2c4f867ee1191f2cd22d512bf820f270dff5e26feaae"
@@ -805,6 +813,14 @@
       "bytes": 1385,
       "sha256": "0da0ff4ed0f89ac488028804839a4f285ded7150cc7f23f654c30c2ee782d424"
     },
+    "firmware/main/weather_http_guard.c": {
+      "bytes": 9230,
+      "sha256": "40fe124dd1cea7a1ce0b538462788078d6edb40caffdcc7b03b71187fce2ed64"
+    },
+    "firmware/main/weather_http_guard.h": {
+      "bytes": 1613,
+      "sha256": "1d312222056f697f93df065e744ff7ab98564b1496b88d5be3b17ff5b189bcea"
+    },
     "firmware/main/weather_schedule.c": {
       "bytes": 1034,
       "sha256": "378e79715d7f8ae85e56077f2d8018d3ad3b3e5f15f2531f9b212adb2f35cde1"
@@ -814,12 +830,12 @@
       "sha256": "f17004c348076328e421209521317e2b2575419b742e03f09e8e185f80f3d2aa"
     },
     "firmware/main/weather_service.c": {
-      "bytes": 55277,
-      "sha256": "75e02201b5fda4cda3a5d08e73803d298f0df26f7e604a68707433b369a28b32"
+      "bytes": 60751,
+      "sha256": "6647677bb0e1039dfdbfc92c1cb4bc47c7ece9c50ac159c27affd322c600ed31"
     },
     "firmware/main/weather_service.h": {
-      "bytes": 1793,
-      "sha256": "13aaa1d4f4748a9f0bdf184672a45d9af6d6fc981fae94b12beb7c0a27ac4146"
+      "bytes": 2330,
+      "sha256": "4c0fe66c4ecf42615547840bccee14d3813830ae0ac0cf5f16ff25180aa61e1b"
     },
     "firmware/main/wifi_store.c": {
       "bytes": 3508,
@@ -857,13 +873,29 @@
       "bytes": 3219,
       "sha256": "51ace834a351392558611a7defc286950da6c8b803b6f252005f8a5ef2f44a16"
     },
+    "tools/alarm-audio/check-private.py": {
+      "bytes": 5155,
+      "sha256": "e62d48e6c49812208d9f83a04c4667527f7405476ee703eec7e50f03a5b1714e"
+    },
     "tools/alarm-audio/generate.py": {
-      "bytes": 2725,
-      "sha256": "a3fa5c7fdf662317272452ac8c6f23751543e0ce669b9c2f70690c59aa86f567"
+      "bytes": 2773,
+      "sha256": "4c308a51db71a5e84661a547b32ce3f2e8c145673ec2adb20dd513edc45ed4e5"
+    },
+    "tools/alarm-audio/prepare-private.py": {
+      "bytes": 3815,
+      "sha256": "2ac34bc3a166c6907009e119c5c3fd77b2e73a4b57935b43668c91ba6edd2480"
+    },
+    "tools/alarm-audio/select.cmake": {
+      "bytes": 1335,
+      "sha256": "e3eae3509cdd601fdbbb7e09a7c7ca809969e413f433dcb4c8b85c93de565058"
     },
     "tools/alarm-audio/synthesize.py": {
       "bytes": 7548,
       "sha256": "bd5210659f06e76ded31b3fd2a8a5c1eec5d12ebba6a3f75279900dffbd25aca"
+    },
+    "tools/alarm-audio/test_reference.c": {
+      "bytes": 2751,
+      "sha256": "98c83f57403ccfbf760eb232795f0dcd2352c83eaea22e865e128908f77b3e75"
     },
     "tools/alarm-foundation/core_test.c": {
       "bytes": 5409,
@@ -878,20 +910,20 @@
       "sha256": "796674bb657bb08be2393a51f0d198a6223fec04e48f917ec9f3e5f4c9f9e7c9"
     },
     "tools/build.ps1": {
-      "bytes": 6596,
-      "sha256": "125e06daff7aa41ae7ab368f047361858ee363346f58ffe9308db2f581a698d0"
+      "bytes": 7067,
+      "sha256": "3080971cfbf343e16e7f4b265a252a1df58c9ef4e8685c580f1db4b4a2445f9b"
     },
     "tools/check-build.py": {
-      "bytes": 6769,
-      "sha256": "fde49cadad0b4c28bcf5650148c0129307c158804f8785d8af7e9ac6f61e069f"
+      "bytes": 7317,
+      "sha256": "62475b7b35bf848babb6447b7be0f22d98fa2e92c8ad112be317b2cd20185ac6"
     },
     "tools/check-core.py": {
       "bytes": 3863,
       "sha256": "4cbdc0d4652029adda86067fa2faf42921946ac5841f19084741f9321cef004e"
     },
     "tools/export-source.py": {
-      "bytes": 6958,
-      "sha256": "85b45b4cf7644a375a9f6d703a8c581fc75511529e7fdb8f4c8b2eb9637f173b"
+      "bytes": 7148,
+      "sha256": "adacb1db25feac980de1e784f77cf354fd2f76b0094a6a20bd86129ed225a536"
     },
     "tools/generate-home-assets.py": {
       "bytes": 9388,
@@ -905,6 +937,90 @@
       "bytes": 16940,
       "sha256": "57f22c420aee3351101fca4adc07a08bde0075e7e8f032fafcb9411a8143daad"
     },
+    "tools/network-hardening/README.md": {
+      "bytes": 2006,
+      "sha256": "d4e37db2cfacc03b7cc0bf2e5fff90eb1ec41ed20b0172e15421a697ad9d1c53"
+    },
+    "tools/network-hardening/apply.cmake": {
+      "bytes": 3030,
+      "sha256": "584914ec231ec229c8dde7fd3fd709a00c0ab0e24d481c00b0874578f5fd7459"
+    },
+    "tools/network-hardening/diagnostics/README.md": {
+      "bytes": 1414,
+      "sha256": "c079c5af8869df565575e8c1dc82c8f75514af842f725a5175649cfb8e4d3d92"
+    },
+    "tools/network-hardening/diagnostics/check.py": {
+      "bytes": 6126,
+      "sha256": "c7af394ae637e9c85ea420af9843bf58119aa4cda26a7021965c71efe40baac0"
+    },
+    "tools/network-hardening/diagnostics/memory-test.c": {
+      "bytes": 4498,
+      "sha256": "7ab5c3f71f7b039ea2ee23418687d5de2d1b801ceb9a73ff07b555a64f5c44ae"
+    },
+    "tools/network-hardening/diagnostics/platform.c": {
+      "bytes": 1276,
+      "sha256": "4b7f1761e9a0160a8a6140a2ae53990887897b6c57564c1ae3b900be4ee5b03c"
+    },
+    "tools/network-hardening/diagnostics/platform.h": {
+      "bytes": 289,
+      "sha256": "d8b0c09e530b859b57739630a68910072727f24350ba16cf3bcd586d722904ca"
+    },
+    "tools/network-hardening/diagnostics/stubs/esp_attr.h": {
+      "bytes": 49,
+      "sha256": "cf951cc87f3425b4cea0f470b5555c77fea3a3c29d615186d99d1df5a744f96e"
+    },
+    "tools/network-hardening/diagnostics/stubs/esp_err.h": {
+      "bytes": 87,
+      "sha256": "f9ca1e83a6da53e6dfec10d1ab3dc65236d95055e75ec8d96de19fd762b2894b"
+    },
+    "tools/network-hardening/diagnostics/stubs/esp_timer.h": {
+      "bytes": 67,
+      "sha256": "82a7c14acf5d1cdcbea1b23bab880c69562da88013adc34ff5f2ae2115fb08d1"
+    },
+    "tools/network-hardening/diagnostics/stubs/freertos/FreeRTOS.h": {
+      "bytes": 278,
+      "sha256": "49b1fa6b93bddd8bb862d1d3a70c972447e4e856389909b599dbcd9ceaec868a"
+    },
+    "tools/network-hardening/sdio/README.md": {
+      "bytes": 3044,
+      "sha256": "09e962a8380177c4d9593612dcc7ad9f9b714bc74897fbad1352b091ccc9f7af"
+    },
+    "tools/network-hardening/sdio/prepare.py": {
+      "bytes": 3967,
+      "sha256": "d0c9afc83e268e74a09bb7b20ef32b967073322e76be598fc08e3b18ac64cdbf"
+    },
+    "tools/network-hardening/sdio/run.py": {
+      "bytes": 6548,
+      "sha256": "348b0e4ed5c7af47ad0093a74c909b2562f7acf521c0294f1909e7342e10304b"
+    },
+    "tools/network-hardening/sdio/sdio-test.c": {
+      "bytes": 13989,
+      "sha256": "29cfcde5f99e872dc93b22c6f8669962ebc610348f26c5b5ac5782211b9379cd"
+    },
+    "tools/network-hardening/sdio/streaming-rx.inc": {
+      "bytes": 4793,
+      "sha256": "b521ebffcccaf6b204a06fca857666d99c15d95b0ebef734990cb108dd29911f"
+    },
+    "tools/network-hardening/tls/README.md": {
+      "bytes": 2492,
+      "sha256": "4149e719c9d071de7e76e49c9f7b37569d08021ab04f440eb55dc7584378015d"
+    },
+    "tools/network-hardening/tls/connect-select.patch": {
+      "bytes": 2475,
+      "sha256": "1bd62d2a75268445b1508dbafb2c326e25a662223444dc36175a2d1db4f8342f"
+    },
+    "tools/network-hardening/tls/prepare.py": {
+      "bytes": 3988,
+      "sha256": "26a9bff2438cba8531a50131723525b18419b6cd24cb8cfad4b8e20af945ac90"
+    },
+    "tools/network-hardening/tls/run.py": {
+      "bytes": 3943,
+      "sha256": "d140953778470e11fab76265e958c090dde55f41e5c6fab6ed4258c928640d01"
+    },
+    "tools/network-hardening/tls/tls-select-test.c": {
+      "bytes": 6381,
+      "sha256": "da9731d81f15156a6a4535737cd6f8411e0992b680c58bb72b2a47d178f70c00"
+    },
     "tools/prepare-weather-contact.py": {
       "bytes": 2191,
       "sha256": "a0c28f7c446251a201801a9cb12a205c37a9d368576215432eecfa239a9f8b24"
@@ -916,5 +1032,5 @@
   },
   "privacy_check": "bounded text patterns; known binary resources excluded; other selected UTF8 text scanned; not a guarantee against every possible secret",
   "scope": "reviewed product snapshot; no Git history, local config, SDK, build outputs or device evidence",
-  "source_commit": "1039687c2f097bf1bddcb38ee74a79ff57b4588e"
+  "source_commit": "91647f4cf5bb6e2c10716ec0eeef796485021fd7"
 }

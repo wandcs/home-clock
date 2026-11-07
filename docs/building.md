@@ -31,6 +31,8 @@
 
 网络需能访问乐鑫组件仓库；已存在的SDK工具和组件缓存可以复用。生成锁可能更新依赖层级或manifest元信息。精确组件版本与本地BSP兼容修改见[兼容说明](../components/waveshare__esp32_p4_wifi6_touch_lcd_7b/COMPATIBILITY.md)。
 
+网络局部修正同样锁定版本：配置阶段通过 [apply.cmake](../tools/network-hardening/apply.cmake) 核对 ESP-IDF/esp-hosted 原源 SHA 和替换上下文，在本次构建目录的 `clock-network-fixes/` 生成确定性的 TLS、SDIO 单源副本，再替换真实编译 target 中唯一对应源；共享 SDK 和 managed 原文件保持不变。原 hash 不符、源匹配不是唯一或生成器缺失时直接停止，不模糊应用补丁，也不自动升级依赖。正常重配会重新核对原输入；维护方式见 [局部修正说明](../tools/network-hardening/README.md)。`-Check`/`--source-only` 仅检查这些项目输入是否齐全，原外部依赖 hash 在实际配置时核对。
+
 正常固件构建直接编译已提交的字体、图形、音型和地点索引，不需要原开发机的`.local`内容。天气提示的小字补充包同样已生成，来源和缺字范围见[资源记录](../assets/application/weather_hint_fonts.json)，可用[生成器](../tools/generate-weather-hint-fonts.py)在固定源字体/Pillow环境重现；日常构建无需运行它。原始数据、源字体及部分生成环境属于可选的资源重生成流程，见[应用资源](../assets/application/README.md)与[天气背景资源](../assets/weather-background/README.md)。必要署名和许可随对应资源保存；doctor检查文件存在和摘要，不判断地点数据时效或替代许可审阅。
 
 这里的可复现是从完整源码与明确版本重新构建。编译时间、安装路径等可能影响ELF和BIN摘要，不承诺不同电脑产物逐字节一致。干净源码构建的实际验证条件会单独记录，包括所复用的SDK、工具和缓存。
@@ -54,6 +56,22 @@
 该值会嵌入固件，可从构建产物中读取；它不在界面显示，构建工具也不打印内容。不要将真实联系文件提交到仓库。每次需保持启用时都提供该参数；不提供参数会恢复无联系配置。`wifi.txt`不是公共构建输入，Wi-Fi密码通过设备触屏配置。
 
 旧私有构建入口仍为 `build-application.ps1` / `build-display-touch.ps1`，保留其历史SDK路径及默认联系文件行为；公共流程不依赖它们。生成器在上述scoped环境变量不存在时沿用旧行为，显式 `--config`仍可选文件。
+
+## 可选私人闹铃音源
+
+公共构建默认使用仓库内的原创合成铃声，不需要额外音频文件。个人设备可显式指定自己有权使用的 WAV：
+
+```powershell
+.\tools\build.ps1 -AlarmAudioWav .local/my-alarm.wav
+```
+
+WAV须为单声道、22050Hz、16位未压缩PCM，长度不超过60秒。格式不符或文件缺失会停止构建，不静默换回默认铃声。需要转换时可用自行安装的FFmpeg，例如 `ffmpeg -i input.wav -ar 22050 -ac 1 -c:a pcm_s16le -map_metadata -1 .local/my-alarm.wav`；此例只转换格式，不加增响、压缩或均衡。公共构建本身不依赖FFmpeg。
+
+私有音源只在忽略的构建目录生成常量数组，循环读取所选只读样本，不另设完整音频的解码或播放堆缓冲。当前配置启用PSRAM XiP，启动时会把只读段从Flash装载到PSRAM，音频常量也会占用这部分PSRAM；具体空间以链接及启动结果为准。音量、温和起响、停止和3分钟自动结束规则保持，循环回到开头不重置起响进度。音量试听使用同一音源。
+
+每次个人构建均须提供该参数；省略会明确恢复原创默认，即使复用上次的构建目录或调用环境曾选择私有音源。直接调用CMake的高级用法可显式设置 `HOME_CLOCK_ALARM_AUDIO_WAV`，空值表示默认；正常使用上述入口即可。旧的 `build-application.ps1` 和应用模式的 `build-display-touch.ps1` 同样提供 `-AlarmAudioWav`，并在本次调用结束后恢复调用者环境。
+
+不要提交私人WAV、生成的数组或包含它的固件；它们不受项目MIT音源许可覆盖。项目不提供运行时铃声选择菜单。
 
 ## 开发配置
 

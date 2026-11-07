@@ -1,0 +1,51 @@
+--- a/components/esp-tls/esp_tls.c
++++ b/components/esp-tls/esp_tls.c
+@@ -508,11 +508,6 @@
+             ESP_LOGD(TAG, "non-tls connection established");
+             return 1;
+         }
+-        if (cfg && cfg->non_block) {
+-            FD_ZERO(&tls->rset);
+-            FD_SET(tls->sockfd, &tls->rset);
+-            tls->wset = tls->rset;
+-        }
+         tls->conn_state = ESP_TLS_CONNECTING;
+     /* falls through */
+     case ESP_TLS_CONNECTING:
+@@ -523,8 +518,20 @@
+ 
+             /* In case of non-blocking I/O, we use the select() API to check whether
+                connection has been established or not*/
+-            if (select(tls->sockfd + 1, &tls->rset, &tls->wset, NULL,
+-                       cfg->timeout_ms>0 ? &tv : NULL) == 0) {
++            FD_ZERO(&tls->rset);
++            FD_SET(tls->sockfd, &tls->rset);
++            tls->wset = tls->rset;
++            int ret = select(tls->sockfd + 1, &tls->rset, &tls->wset, NULL,
++                             cfg->timeout_ms>0 ? &tv : NULL);
++            if (ret < 0) {
++                int error = errno;
++                ESP_LOGD(TAG, "Non blocking connect select failed");
++                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, error);
++                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST);
++                tls->conn_state = ESP_TLS_FAIL;
++                return -1;
++            }
++            if (ret == 0) {
+                 ESP_LOGD(TAG, "select() timed out");
+                 return 0;
+             }
+@@ -536,6 +543,13 @@
+                     ESP_LOGD(TAG, "Non blocking connect failed");
+                     ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+                     ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED);
++                    tls->conn_state = ESP_TLS_FAIL;
++                    return -1;
++                }
++                if (error != 0) {
++                    ESP_LOGD(TAG, "Non blocking connect returned a socket error");
++                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, error);
++                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST);
+                     tls->conn_state = ESP_TLS_FAIL;
+                     return -1;
+                 }

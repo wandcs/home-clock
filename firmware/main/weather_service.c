@@ -68,7 +68,28 @@ weather_state_t weather_read(void) {
     weather_state_t copy={.error=WX_UNCONFIGURED};
     if(mutex) { xSemaphoreTake(mutex,portMAX_DELAY); copy=state; copy.next_due_ms=schedule.due_ms; copy.failures=schedule.failures; xSemaphoreGive(mutex); }
     copy.backup_configured=met_contact()!=NULL&&met_cache!=NULL;
+    copy.http_progress=weather_http_guard_read();
     return copy;
+}
+weather_refresh_result_t weather_request_refresh(void) {
+    if(!mutex)return WEATHER_REFRESH_NOT_READY;
+    network_state_t net=app_network_read();uint64_t now=app_uptime();
+    xSemaphoreTake(mutex,portMAX_DELAY);
+    weather_refresh_result_t result;
+    if(!state.configured)result=WEATHER_REFRESH_NO_LOCATION;
+    else if(!net.connected||!net.time_valid)result=WEATHER_REFRESH_NOT_READY;
+    else if(state.manual_pending){state.manual_requests++;result=WEATHER_REFRESH_ACCEPTED;}
+    else if(state.manual_requested_ms&&now-state.manual_requested_ms<5000)result=WEATHER_REFRESH_THROTTLED;
+    else {
+        state.manual_pending=true;state.manual_requested_ms=now;state.manual_requests++;
+        if(!schedule.in_flight)schedule.due_ms=now;
+        result=WEATHER_REFRESH_ACCEPTED;
+    }
+    xSemaphoreGive(mutex);
+    /* Metadata intent only, including when calendar owns the shared slot.
+     * Neither this call nor weather_read waits for a transport/lifetime lock. */
+    if(result==WEATHER_REFRESH_ACCEPTED)weather_http_guard_request_recovery();
+    return result;
 }
 static bool set_location(double lat,double lon,const char *timezone,bool test) {
     char checked[WEATHER_URL_BYTES];
@@ -107,7 +128,7 @@ static bool request(int fault) {
     xSemaphoreGive(mutex); return ok;
 }
 #endif
-typedef struct { char *body; size_t used; bool oversized,deadline,cancelled; uint64_t started,connected_ms,sent_ms,header_ms;
+typedef struct { char *body; size_t used; bool oversized,deadline,cancelled; uint64_t started,connected_ms,sent_ms,header_ms; uint32_t guard;
 #if CONFIG_CLOCK_DIAGNOSTICS
     int last_rc,last_errno;
     uint32_t perform_calls;
@@ -236,8 +257,16 @@ static void tls_probe(uint32_t id){
     printf("{\"event\":\"weather_tls_probe_done\",\"rid\":%"PRIu32",\"budget\":%s,\"completed\":%d,\"soft_limit_reached\":%s,\"elapsed_ms\":%"PRIu64"}\n",id,budget?"true":"false",completed,app_uptime()-started>=75000?"true":"false",app_uptime()-started);
 }
 #endif
+static void guard_event(uint32_t token,esp_http_client_event_t *e) {
+    if(e->event_id==HTTP_EVENT_ON_CONNECTED)weather_http_guard_connected(token,esp_http_client_get_socket(e->client));
+    else if(e->event_id==HTTP_EVENT_HEADERS_SENT||e->event_id==HTTP_EVENT_ON_HEADER)weather_http_guard_phase(token,WHG_HEADERS);
+    else if(e->event_id==HTTP_EVENT_ON_DATA)weather_http_guard_phase(token,WHG_BODY);
+    else if(e->event_id==HTTP_EVENT_DISCONNECTED||e->event_id==HTTP_EVENT_ON_FINISH||e->event_id==HTTP_EVENT_ERROR)
+        weather_http_guard_detach(token);
+}
 static esp_err_t event(esp_http_client_event_t *e) {
     body_t *b=e->user_data;
+    guard_event(b->guard,e);
 #if CONFIG_CLOCK_DIAGNOSTICS
     if(e->event_id==HTTP_EVENT_ON_CONNECTED)b->connected_ms=app_uptime();
     if(e->event_id==HTTP_EVENT_HEADERS_SENT)b->sent_ms=app_uptime();
@@ -261,6 +290,9 @@ static weather_error_t fetch(job_t job,weather_data_t *data,int *status,int *tra
     network_state_t net=app_network_read();
     if(!net.time_valid) return WX_CLOCK;
     if(!net.connected) return WX_OFFLINE;
+    uint64_t started=app_uptime();
+    uint32_t token=weather_http_guard_begin(WHG_OWNER_PRIMARY,job.generation,25000);
+    weather_http_guard_phase(token,WHG_DNS);
     struct addrinfo hints={.ai_family=AF_INET,.ai_socktype=SOCK_STREAM},*address=NULL;
     int dns=getaddrinfo("api.open-meteo.com",NULL,&hints,&address);
 #if CONFIG_CLOCK_DIAGNOSTICS
@@ -270,13 +302,18 @@ static weather_error_t fetch(job_t job,weather_data_t *data,int *status,int *tra
     errno=diagnostic_errno;
 #endif
     if(address) freeaddrinfo(address);
+    weather_http_guard_phase(token,WHG_CONNECT);
     printf("{\"event\":\"weather_dns\",\"host\":\"api.open-meteo.com\",\"result\":%d,\"uptime_ms\":%"PRIu64"}\n",dns,app_uptime());
-    if(dns) { *transport=dns; return WX_TRANSPORT; }
+    if(dns||weather_http_guard_expired(token)) {
+        *transport=dns?dns:ESP_ERR_TIMEOUT;
+        weather_error_t failure=weather_http_guard_expired(token)?WX_TIMEOUT:WX_TRANSPORT;
+        weather_http_guard_end(token);return failure;
+    }
     char url[WEATHER_URL_BYTES];
-    if(!weather_url(job.latitude,job.longitude,job.timezone,url,sizeof url))return WX_SCHEMA;
+    if(!weather_url(job.latitude,job.longitude,job.timezone,url,sizeof url)){weather_http_guard_end(token);return WX_SCHEMA;}
     /* CPU-only response data leaves internal memory available for networking. */
-    body_t b={.body=heap_caps_calloc(WEATHER_BODY_LIMIT+1,1,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT),.started=app_uptime()};
-    if(!b.body) { *transport=ESP_ERR_NO_MEM; return WX_TRANSPORT; }
+    body_t b={.body=heap_caps_calloc(WEATHER_BODY_LIMIT+1,1,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT),.started=started,.guard=token};
+    if(!b.body) { *transport=ESP_ERR_NO_MEM;weather_http_guard_end(token);return WX_TRANSPORT; }
     esp_http_client_config_t cfg={.url=url,.timeout_ms=4000,.crt_bundle_attach=esp_crt_bundle_attach,
         .skip_cert_common_name_check=false,.disable_auto_redirect=true,.buffer_size=1024,.buffer_size_tx=768,
         .event_handler=event,.user_data=&b,.is_async=true};
@@ -298,6 +335,7 @@ static weather_error_t fetch(job_t job,weather_data_t *data,int *status,int *tra
 #endif
         if(err==ESP_ERR_HTTP_EAGAIN) vTaskDelay(pdMS_TO_TICKS(20));
     } while(err==ESP_ERR_HTTP_EAGAIN && !b.oversized && !b.deadline);
+    if(weather_http_guard_expired(token))b.deadline=true;
     *status=client?esp_http_client_get_status_code(client):0; *transport=err; *bytes=b.used;
     weather_error_t result;
     if(b.oversized) result=WX_TOO_LARGE;
@@ -320,11 +358,13 @@ static weather_error_t fetch(job_t job,weather_data_t *data,int *status,int *tra
 #if CONFIG_CLOCK_DIAGNOSTICS
         printf("{\"event\":\"weather_phases\",\"started_ms\":%"PRIu64",\"connected_ms\":%"PRIu64",\"sent_ms\":%"PRIu64",\"header_ms\":%"PRIu64",\"internal8_free\":%u,\"internal8_largest\":%u,\"dma_free\":%u}\n",b.started,b.connected_ms,b.sent_ms,b.header_ms,(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA));
 #endif
+        weather_http_guard_phase(token,WHG_CLEANUP);weather_http_guard_detach(token);
         esp_http_client_cleanup(client);
     }
 #if CONFIG_CLOCK_DIAGNOSTICS
     else printf("{\"event\":\"weather_http_stop\",\"stop_reason\":\"client_init_failed\",\"perform_calls\":0,\"final_rc\":%d,\"elapsed_ms\":%"PRIu64"}\n",err,app_uptime()-b.started);
 #endif
+    weather_http_guard_end(token);
     if(result==WX_OK) {
         result=weather_parse(b.body,b.used,app_utc_us()/1000000,app_uptime(),data);
 #if CONFIG_CLOCK_DIAGNOSTICS
@@ -342,6 +382,7 @@ typedef struct {
     char *body;
     size_t input, used;
     uint64_t started;
+    uint32_t guard;
     bool gzip, encoding_seen, unsupported, oversized, invalid, deadline, cancelled, zinit, zend;
     z_stream z;
     char modified[80], expires[80], retry[80], location[WEATHER_URL_BYTES];
@@ -361,6 +402,7 @@ static void header_copy(char *to,size_t capacity,const char *from) {
 }
 static esp_err_t met_event(esp_http_client_event_t *e) {
     met_response_t *r=e->user_data;
+    guard_event(r->guard,e);
     if(app_uptime()-r->started>25000)r->deadline=true;
     if(e->event_id==HTTP_EVENT_ON_HEADER&&e->header_key&&e->header_value) {
         if(!strcasecmp(e->header_key,"Content-Encoding")) {
@@ -532,8 +574,16 @@ static weather_error_t met_fetch(job_t job,weather_data_t *out,int offset_s,bool
     double lat=lat_e4/10000.0,lon=lon_e4/10000.0;
     snprintf(url,sizeof url,"https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=%.4f&lon=%.4f",lat,lon);
     uint64_t started=app_uptime();weather_error_t result=WX_TRANSPORT;
+    uint32_t token=weather_http_guard_begin(WHG_OWNER_MET,job.generation,25000);
+    int dns=0;met_requests++;
+    if(!weather_http_guard_dns(token,"api.met.no",&dns)) {
+        *transport=dns?dns:ESP_ERR_TIMEOUT;
+        result=weather_http_guard_expired(token)?WX_TIMEOUT:WX_TRANSPORT;
+        weather_http_guard_end(token);free(r->body);free(r);return result;
+    }
     for(int redirect=0;redirect<2;redirect++) {
-        char *body=r->body;memset(r,0,sizeof *r);r->body=body;r->started=started;
+        char *body=r->body;memset(r,0,sizeof *r);r->body=body;r->started=started;r->guard=token;
+        weather_http_guard_phase(token,WHG_CONNECT);
         esp_http_client_config_t cfg={.url=url,.timeout_ms=4000,.crt_bundle_attach=esp_crt_bundle_attach,
             .skip_cert_common_name_check=false,.disable_auto_redirect=true,.buffer_size=1024,.buffer_size_tx=768,
             .event_handler=met_event,.user_data=r,.is_async=true};
@@ -546,7 +596,7 @@ static weather_error_t met_fetch(job_t job,weather_data_t *out,int offset_s,bool
             bool covered=met_covered(utc,offset_s,need_current,need_days);
             if(headers&&covered&&met_cache->modified[0])headers=esp_http_client_set_header(client,"If-Modified-Since",met_cache->modified)==ESP_OK;
             if(headers) {
-                met_requests++;
+                if(redirect)met_requests++;
                 do {
                     if(app_uptime()-started>25000){r->deadline=true;error=ESP_ERR_TIMEOUT;break;}
                     error=esp_http_client_perform(client);
@@ -555,9 +605,13 @@ static weather_error_t met_fetch(job_t job,weather_data_t *out,int offset_s,bool
             }
         }
         *status=client?esp_http_client_get_status_code(client):0;*transport=error;*bytes=(int)r->input;
+        if(weather_http_guard_expired(token))r->deadline=true;
         bool complete=client&&esp_http_client_is_complete_data_received(client);
         if(r->zinit)inflateEnd(&r->z);
-        if(client)esp_http_client_cleanup(client); /* Release TLS before cJSON entry parsing. */
+        if(client){
+            weather_http_guard_phase(token,WHG_CLEANUP);weather_http_guard_detach(token);
+            esp_http_client_cleanup(client); /* Owner releases TLS before cJSON. */
+        }
         utc=app_utc_us()/1000000;
         if(*status==200||*status==304)met_cache->not_before_utc=http_date(r->expires);
         if(*status==429||*status==503) {
@@ -592,12 +646,21 @@ static weather_error_t met_fetch(job_t job,weather_data_t *out,int offset_s,bool
         }
         break;
     }
+    weather_http_guard_end(token);
     free(r->body);free(r);return result;
 }
 static weather_error_t air_fetch(job_t job,air_quality_cache_t *out,int *status,int *transport,int *bytes) {
     char url[AIR_QUALITY_URL_BYTES];if(!air_quality_url(job.latitude,job.longitude,url,sizeof url))return WX_SCHEMA;
-    body_t b={.body=heap_caps_calloc(AIR_QUALITY_BODY_LIMIT+1,1,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT),.started=app_uptime()};
-    if(!b.body){*transport=ESP_ERR_NO_MEM;return WX_TRANSPORT;}
+    uint64_t started=app_uptime();
+    uint32_t token=weather_http_guard_begin(WHG_OWNER_AIR,job.generation,25000);
+    int dns=0;
+    if(!weather_http_guard_dns(token,"air-quality-api.open-meteo.com",&dns)) {
+        *transport=dns?dns:ESP_ERR_TIMEOUT;
+        weather_error_t failure=weather_http_guard_expired(token)?WX_TIMEOUT:WX_TRANSPORT;
+        weather_http_guard_end(token);return failure;
+    }
+    body_t b={.body=heap_caps_calloc(AIR_QUALITY_BODY_LIMIT+1,1,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT),.started=started,.guard=token};
+    if(!b.body){*transport=ESP_ERR_NO_MEM;weather_http_guard_end(token);return WX_TRANSPORT;}
     _Static_assert(AIR_QUALITY_BODY_LIMIT==WEATHER_BODY_LIMIT,"shared bounded body handler");
     esp_http_client_config_t cfg={.url=url,.timeout_ms=4000,.crt_bundle_attach=esp_crt_bundle_attach,
         .skip_cert_common_name_check=false,.disable_auto_redirect=true,.buffer_size=1024,.buffer_size_tx=768,
@@ -607,9 +670,11 @@ static weather_error_t air_fetch(job_t job,air_quality_cache_t *out,int *status,
         if(app_uptime()-b.started>25000){b.deadline=true;error=ESP_ERR_TIMEOUT;break;}
         error=esp_http_client_perform(client);if(error==ESP_ERR_HTTP_EAGAIN)vTaskDelay(pdMS_TO_TICKS(20));
     }while(error==ESP_ERR_HTTP_EAGAIN&&!b.deadline&&!b.oversized);
+    if(weather_http_guard_expired(token))b.deadline=true;
     *status=client?esp_http_client_get_status_code(client):0;*transport=error;*bytes=(int)b.used;
     bool complete=client&&esp_http_client_is_complete_data_received(client);
-    if(client)esp_http_client_cleanup(client);
+    if(client){weather_http_guard_phase(token,WHG_CLEANUP);weather_http_guard_detach(token);esp_http_client_cleanup(client);}
+    weather_http_guard_end(token);
     weather_error_t result=b.oversized?WX_TOO_LARGE:b.deadline||error==ESP_ERR_TIMEOUT||error==ESP_ERR_HTTP_EAGAIN||error==ESP_ERR_HTTP_READ_TIMEOUT?WX_TIMEOUT:
         error==ESP_ERR_HTTP_INCOMPLETE_DATA||error==ESP_ERR_HTTP_CONNECTION_CLOSED?WX_TRUNCATED:error!=ESP_OK?WX_TRANSPORT:*status!=200?WX_HTTP:!complete?WX_TRUNCATED:WX_OK;
     if(result==WX_OK)result=app_network_read().time_valid?air_quality_parse(b.body,b.used,app_utc_us()/1000000,app_uptime(),out):WX_CLOCK;
@@ -672,6 +737,7 @@ static void service(void *unused) {
 #if CONFIG_CLOCK_DIAGNOSTICS
             job.fault=next_fault; next_fault=0;
 #endif
+            state.manual_pending=false;
             state.fetching=true; state.attempted_ms=app_uptime(); state.issued++;
         }
         xSemaphoreGive(mutex);
@@ -737,6 +803,13 @@ static void service(void *unused) {
         if(job.generation==state.generation) {
             state.attempts++; state.fetching=false; state.finished_ms=app_uptime();
             state.error=result; state.http_status=http; state.transport_error=transport; state.bytes=bytes;
+            bool success=result==WX_OK||result==WX_PARTIAL;
+            bool confirmed_fresh=(primary_http==200&&(primary_error==WX_OK||primary_error==WX_PARTIAL))||
+                ((backup_http==200||backup_http==304)&&(backup_error==WX_OK||backup_error==WX_PARTIAL));
+            if(success&&confirmed_fresh)state.manual_pending=false;
+            /* One click during failure survives as one immediate retry; a
+             * successful response already in flight covers the coalesced click. */
+            if(state.manual_pending)schedule.due_ms=app_uptime();
             state.primary_http=primary_http;state.backup_http=backup_http;
             state.primary_error=primary_error;state.backup_error=backup_error;
             state.backup_attempted=backup_attempted;state.backup_cached=backup_cached;state.primary_injected=job.fault==6;
@@ -760,7 +833,8 @@ static void service(void *unused) {
             ((primary_http>0&&job.fault==0)||backup_attempted)?"true":"false",((primary_http>0&&job.fault==0)||backup_http>0)?"true":"false",
             http,transport,bytes,weather_error_name(result),app_uptime());
         funlockfile(stdout);
-        air_refresh(job); /* Weather outcome is published and its TLS released first. */
+        xSemaphoreTake(mutex,portMAX_DELAY);bool manual_waiting=state.manual_pending;xSemaphoreGive(mutex);
+        if(!manual_waiting)air_refresh(job); /* Publish weather/release TLS first. */
     }
 }
 void weather_status(void) {
@@ -778,6 +852,8 @@ void weather_status(void) {
     if(w.development_test) printf(",\"test_location\":\"Shanghai-public-development-test\",\"latitude\":%.4f,\"longitude\":%.4f",w.latitude,w.longitude);
     weather_current_t *c=&w.data.current;
     printf(",\"issued\":%"PRIu32",\"next_due_ms\":%"PRIu64",\"consecutive_failures\":%u,\"injected\":%s",w.issued,w.next_due_ms,w.failures,w.injected?"true":"false");
+    printf(",\"attempted_ms\":%"PRIu64",\"finished_ms\":%"PRIu64",\"manual_pending\":%s,\"manual_requests\":%"PRIu32,
+        w.attempted_ms,w.finished_ms,w.manual_pending?"true":"false",w.manual_requests);
     printf(",\"current\":{\"source\":\"%s\",\"model_updated_utc\":%"PRId64",\"present\":%s,\"valid\":%s,\"code\":%d,\"kind\":\"%s\",\"temperature_c\":%.2f,\"source_utc\":%"PRId64",\"interval_s\":%d,\"fetched_utc\":%"PRId64",\"fetched_ms\":%"PRIu64",\"wind_present\":%s,\"wind_mps\":%.3f,\"wind_grade\":%d,\"gust_present\":%s,\"gust_mps\":%.3f},\"daily\":[",
         weather_provider_name(c->provider),c->model_updated_utc,c->present?"true":"false",weather_current_valid(c,utc,ms,n.time_valid)?"true":"false",c->code,c->present?weather_kind_name(c->code):"unknown",c->temperature_c,c->source_utc,c->interval_s,c->fetched_utc,c->fetched_ms,c->wind_present?"true":"false",c->wind_mps,c->wind_present?weather_wind_grade(c->wind_mps):-1,c->gust_present?"true":"false",c->gust_mps);
     for(int i=0;i<7;i++) { weather_day_t *d=&w.data.days[i];
@@ -785,6 +861,11 @@ void weather_status(void) {
         printf("%s{\"date\":\"%s\",\"source\":\"%s\",\"present\":%s,\"valid\":%s,\"today\":%s,\"code\":%d,\"kind\":\"%s\",\"high_c\":%.2f,\"low_c\":%.2f,\"precipitation_present\":%s,\"precipitation_pct\":%.2f,\"fetched_utc\":%"PRId64",\"wind_present\":%s,\"wind_mps\":%.3f,\"wind_grade\":%d,\"uv_present\":%s,\"uv_index\":%.2f,\"range_estimated\":%s,\"gust_present\":%s,\"gust_mps\":%.3f}",i?",":"",d->date,weather_provider_name(d->provider),d->present?"true":"false",date_ok&&weather_day_valid(d,utc,ms,n.time_valid)?"true":"false",d->present&&today[0]&&strcmp(d->date,today)==0?"true":"false",d->code,d->present?weather_kind_name(d->code):"unknown",d->high_c,d->low_c,d->precipitation_present?"true":"false",d->precipitation_pct,d->fetched_utc,d->wind_present?"true":"false",d->wind_mps,d->wind_present?weather_wind_grade(d->wind_mps):-1,d->uv_present?"true":"false",d->uv_index,d->range_estimated?"true":"false",d->gust_present?"true":"false",d->gust_mps);
     }
     printf("]}");
+    const weather_http_progress_t *h=&w.http_progress;
+    printf(",\"http_request\":{\"attempt_id\":%"PRIu32",\"generation\":%"PRIu32",\"owner\":\"%s\",\"phase\":\"%s\",\"active\":%s,\"fd_present\":%s,\"started_ms\":%"PRIu64",\"progress_ms\":%"PRIu64",\"deadline_ms\":%"PRIu64",\"finished_ms\":%"PRIu64",\"interruption_requested\":%s,\"shutdown_attempts\":%"PRIu32",\"dns_resets\":%"PRIu32",\"stale_callbacks\":%"PRIu32",\"guard_stack_min_bytes\":%"PRIu32"}",
+        h->attempt_id,h->generation,weather_http_owner_name(h->owner),weather_http_phase_name(h->phase),
+        h->active?"true":"false",h->fd_present?"true":"false",h->started_ms,h->progress_ms,h->deadline_ms,h->finished_ms,
+        h->interrupted?"true":"false",h->socket_aborts,h->dns_resets,h->stale_callbacks,h->guard_task_stack_min_bytes);
     const air_quality_current_t *aq=&w.air_quality;
     printf(",\"air_quality\":{\"source\":\"Open-Meteo / CAMS global\",\"index\":\"US AQI\",\"model_data\":true,\"present\":%s,\"valid\":%s,\"poor\":%s,\"us_aqi\":%.2f,\"pm25_present\":%s,\"pm25_ug_m3\":%.2f,\"source_utc\":%"PRId64",\"fetched_utc\":%"PRId64",\"fetched_ms\":%"PRIu64",\"fetching\":%s,\"attempts\":%"PRIu32",\"successes\":%"PRIu32",\"http\":%d,\"transport_error\":%d,\"bytes\":%d,\"result\":\"%s\",\"attempted_ms\":%"PRIu64",\"finished_ms\":%"PRIu64",\"next_due_ms\":%"PRIu64"}",
         aq->present?"true":"false",air_quality_valid(aq,utc,ms,n.time_valid)?"true":"false",air_quality_valid(aq,utc,ms,n.time_valid)&&air_quality_poor(aq)?"true":"false",aq->us_aqi,aq->pm25_present?"true":"false",aq->pm25_ug_m3,aq->source_utc,aq->fetched_utc,aq->fetched_ms,w.air_quality_fetching?"true":"false",w.air_quality_attempts,w.air_quality_successes,w.air_quality_http,w.air_quality_transport,w.air_quality_bytes,weather_error_name(w.air_quality_error),w.air_quality_attempted_ms,w.air_quality_finished_ms,w.air_quality_next_due_ms);
@@ -833,6 +914,7 @@ int weather_command(const char *line,uint32_t *rid) {
 #endif
 void weather_start(void) {
     mutex=xSemaphoreCreateMutex(); http_budget=xSemaphoreCreateMutex(); configASSERT(mutex&&http_budget);
+    configASSERT(weather_http_guard_start());
     state.error=WX_UNCONFIGURED;state.air_quality_error=WX_UNCONFIGURED;
     met_cache=heap_caps_calloc(1,sizeof *met_cache,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
     configASSERT(xTaskCreate(service,"weather",12288,NULL,3,NULL)==pdPASS);

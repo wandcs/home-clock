@@ -2,6 +2,7 @@
 #include "weather_data.h"
 #include "weather_schedule.h"
 #include "air_quality.h"
+#include "weather_http_guard.h"
 typedef struct {
     bool configured, development_test, fetching, injected;
     double latitude, longitude;
@@ -12,6 +13,10 @@ typedef struct {
     uint64_t next_due_ms;
     unsigned failures;
     uint32_t issued;
+    bool manual_pending;
+    uint32_t manual_requests;
+    uint64_t manual_requested_ms;
+    weather_http_progress_t http_progress;
     weather_error_t error;
     int primary_http, backup_http;
     weather_error_t primary_error, backup_error;
@@ -26,6 +31,15 @@ typedef struct {
     uint64_t air_quality_attempted_ms,air_quality_finished_ms,air_quality_next_due_ms;
     weather_data_t data;
 } weather_state_t;
+typedef enum {
+    WEATHER_REFRESH_ACCEPTED,
+    WEATHER_REFRESH_NO_LOCATION,
+    WEATHER_REFRESH_NOT_READY,
+    WEATHER_REFRESH_THROTTLED
+} weather_refresh_result_t;
+/* Non-blocking intent only: ACCEPTED may coalesce with an in-flight refresh.
+ * It does not mean an HTTP request or weather update has succeeded. */
+weather_refresh_result_t weather_request_refresh(void);
 void weather_start(void);
 /* F3 position owner calls this only after durable readback, or on valid boot load. */
 bool weather_set_location(double latitude,double longitude,const char *timezone);

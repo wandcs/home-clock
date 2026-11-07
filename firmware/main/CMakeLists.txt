@@ -1,4 +1,4 @@
-idf_component_register(SRCS "app_main.c" "app_ui.c" "ui_memory.c" "app_state.c" "sensors.c" "network_time.c" "wifi_store.c" "wifi_ui.c" "weather_data.c" "weather_hint.c" "air_quality.c" "weather_schedule.c" "weather_service.c" "location_data.c" "location_store.c" "location_service.c" "location_ui.c"
+idf_component_register(SRCS "app_main.c" "network_memory.c" "app_ui.c" "ui_memory.c" "app_state.c" "sensors.c" "network_time.c" "wifi_store.c" "wifi_ui.c" "weather_data.c" "weather_hint.c" "air_quality.c" "weather_schedule.c" "weather_service.c" "weather_http_guard.c" "location_data.c" "location_store.c" "location_service.c" "location_ui.c"
     "location_catalog.c" "location_index/index.c" "../../assets/application/location_normalize.c"
     "../../assets/application/pinyin_dict.c"
     "../../assets/application/font_28.c" "../../assets/application/font_44.c"
@@ -13,7 +13,7 @@ idf_component_register(SRCS "app_main.c" "app_ui.c" "ui_memory.c" "app_state.c" 
     "../../assets/application/weather_fog.bin" "../../assets/application/weather_rain.bin"
     "../../assets/application/weather_snow.bin" "../../assets/application/weather_thunder.bin"
     "../../assets/application/locations.lco" "../../assets/application/location_metadata.bin")
-set_source_files_properties(app_main.c app_ui.c location_catalog.c location_data.c location_store.c location_service.c location_ui.c weather_data.c weather_hint.c air_quality.c weather_service.c location_index/index.c PROPERTIES COMPILE_OPTIONS "-fstack-usage")
+set_source_files_properties(app_main.c network_memory.c app_ui.c location_catalog.c location_data.c location_store.c location_service.c location_ui.c weather_data.c weather_hint.c air_quality.c weather_service.c weather_http_guard.c location_index/index.c PROPERTIES COMPILE_OPTIONS "-fstack-usage")
 # LVGL refers to the custom core after the application archive is scanned.
 # Keep its single implementation object in the final link.
 target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,-u,lv_malloc_core")
@@ -48,7 +48,7 @@ target_sources(${COMPONENT_LIB} PRIVATE
     ../features/alarm-management/alarm_ui.c
     ../features/alarm-trigger/alarm_trigger.c ../features/alarm-trigger/alarm_trigger_audio.c
     ../features/alarm-store/alarm_store.c ../features/alarm-store/alarm_store_codec.c ../features/alarm-store/alarm_store_nvs.c
-    ../features/alarm-audio/alarm_source.c ../features/alarm-audio/alarm_reference.c
+    ../features/alarm-audio/alarm_source.c
     ../features/alarm-audio/alarm_player.c ../features/alarm-audio/alarm_bsp.c
     ../features/calendar-client/calendar_client.c ../features/calendar-client/calendar_http.c
     ../features/calendar-runtime/calendar_runtime_core.c ../features/calendar-runtime/calendar_runtime_nvs.c ../features/calendar-runtime/calendar_runtime_service.c
@@ -61,4 +61,8 @@ target_include_directories(${COMPONENT_LIB} PRIVATE
 set_source_files_properties(../features/met-weather/met_forecast.c display_policy.c background_runtime.c weather_background.c PROPERTIES COMPILE_OPTIONS "-fstack-usage")
 set_source_files_properties(../features/alarm-management/alarm_service.c ../features/alarm-management/alarm_runtime.c
     ../features/alarm-audio/alarm_bsp.c ../features/alarm-audio/alarm_player.c
-    ../features/calendar-runtime/calendar_runtime_service.c PROPERTIES COMPILE_OPTIONS "-fstack-usage")
+    ../features/calendar-client/calendar_http.c ../features/calendar-runtime/calendar_runtime_service.c PROPERTIES COMPILE_OPTIONS "-fstack-usage")
+
+# Explicit private audio is generated only in the ignored build tree.
+include("${CMAKE_CURRENT_LIST_DIR}/../../tools/alarm-audio/select.cmake")
+clock_add_alarm_reference(${COMPONENT_LIB} "${weather_python}")

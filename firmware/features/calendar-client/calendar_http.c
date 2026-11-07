@@ -1,4 +1,5 @@
 #include "calendar_http.h"
+#include "weather_http_guard.h"
 #include "esp_crt_bundle.h"
 #include "esp_http_client.h"
 #include "esp_timer.h"
@@ -10,6 +11,7 @@ typedef struct {
     uint8_t *body;
     size_t used;
     uint64_t start;
+    uint32_t guard;
     bool oversized, expired, encoding, cancelled;
 }
 body;
@@ -18,6 +20,11 @@ static uint64_t now_ms(void) {
 }
 static esp_err_t event(esp_http_client_event_t *e) {
     body *b=e->user_data;
+    if(e->event_id==HTTP_EVENT_ON_CONNECTED)weather_http_guard_connected(b->guard,esp_http_client_get_socket(e->client));
+    else if(e->event_id==HTTP_EVENT_HEADERS_SENT||e->event_id==HTTP_EVENT_ON_HEADER)weather_http_guard_phase(b->guard,WHG_HEADERS);
+    else if(e->event_id==HTTP_EVENT_ON_DATA)weather_http_guard_phase(b->guard,WHG_BODY);
+    else if(e->event_id==HTTP_EVENT_DISCONNECTED||e->event_id==HTTP_EVENT_ON_FINISH||e->event_id==HTTP_EVENT_ERROR)
+        weather_http_guard_detach(b->guard);
     if(now_ms()-b->start>=25000u)b->expired=true;
     if(e->event_id==HTTP_EVENT_ON_HEADER&&e->header_key&&e->header_value&& !strcasecmp(e->header_key,"Content-Encoding")&&strcasecmp(e->header_value,"identity"))b->encoding=true;
     if(e->event_id==HTTP_EVENT_ON_DATA&&e->data_len>0) {
@@ -44,9 +51,15 @@ cc_result cc_http_candidate(uint16_t year,bool online,bool clock,uint8_t *scratc
     if(!online)return CC_OFFLINE;
     char url[112];
     if(!cc_url(year,url,sizeof url))return CC_ARGUMENT;
-    body b= {
-        .body=scratch,.start=now_ms()
-    };
+    uint64_t started=now_ms();
+    uint32_t token=weather_http_guard_begin(WHG_OWNER_CALENDAR,year,25000);
+    int dns=0;
+    if(!weather_http_guard_dns(token,"raw.githubusercontent.com",&dns)) {
+        info->transport=dns?dns:ESP_ERR_TIMEOUT;info->elapsed_ms=now_ms()-started;
+        cc_result failure=weather_http_guard_expired(token)?CC_TIMEOUT:CC_TRANSPORT;
+        weather_http_guard_end(token);return failure;
+    }
+    body b= { .body=scratch,.start=started,.guard=token };
     esp_http_client_config_t cfg= {
         .url=url,.timeout_ms=4000,.crt_bundle_attach=esp_crt_bundle_attach, .skip_cert_common_name_check=false,.disable_auto_redirect=true,.max_authorization_retries=-1, .transport_type=HTTP_TRANSPORT_OVER_SSL,.buffer_size=1024,.buffer_size_tx=512, .event_handler=event,.user_data=&b,.is_async=true
     };
@@ -65,6 +78,7 @@ cc_result cc_http_candidate(uint16_t year,bool online,bool clock,uint8_t *scratc
         }
         while(err==ESP_ERR_HTTP_EAGAIN&&!b.cancelled);
     }
+    if(weather_http_guard_expired(token))b.expired=true;
     info->status=h?esp_http_client_get_status_code(h):0;
     info->transport=err;
     info->bytes=b.used;
@@ -79,8 +93,10 @@ cc_result cc_http_candidate(uint16_t year,bool online,bool clock,uint8_t *scratc
     else result=CC_OK;
     if(h) {
         esp_http_client_get_and_clear_last_tls_error(h,&info->tls_error,&info->tls_flags);
+        weather_http_guard_phase(token,WHG_CLEANUP);weather_http_guard_detach(token);
         esp_http_client_cleanup(h);
     }
+    weather_http_guard_end(token);
     info->elapsed_ms=now_ms()-b.start;
     if(result==CC_OK)result=cc_parse(scratch,b.used,year,out);
     return result;

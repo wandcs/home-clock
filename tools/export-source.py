@@ -24,6 +24,8 @@ FILES = {
     "tools/generate-weather-hint-fonts.py",
     "tools/prepare-weather-contact.py", "tools/export-source.py",
     "tools/alarm-audio/generate.py", "tools/alarm-audio/synthesize.py",
+    "tools/alarm-audio/select.cmake", "tools/alarm-audio/prepare-private.py",
+    "tools/alarm-audio/check-private.py", "tools/alarm-audio/test_reference.c",
     "tools/brightness-policy/test_policy.c", "tools/indoor-comfort/test.c",
     "tools/solar-core/test_core.c", "tools/alarm-foundation/core_test.c",
     "tools/alarm-foundation/fixtures/2026.afy",
@@ -39,6 +41,7 @@ PREFIXES = (
     "components/waveshare__esp32_p4_wifi6_touch_lcd_7b/",
     "assets/application/", "assets/weather-background/",
     "assets/alarm-audio/", "LICENSES/",
+    "tools/network-hardening/",
 )
 BINARY_SUFFIXES = {".bin", ".pcm", ".lco", ".afy", ".png", ".gif"}
 PATTERNS = {

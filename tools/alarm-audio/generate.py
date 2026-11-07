@@ -31,7 +31,7 @@ def build():
     text += 'const int16_t aa_reference[AA_PERIOD] = {\n'
     text += ''.join('    ' + ','.join(map(str, values[i:i+16])) + ',\n'
                     for i in range(0, len(values), 16))
-    text += '};\n'
+    text += '};\nconst uint32_t aa_reference_count = AA_PERIOD;\n'
     manifest = {
         'version': version, 'status': module.SPEC['status'], 'source': 'original mathematical synthesis',
         'license': 'Original synthesis under the project MIT License; no third-party samples',

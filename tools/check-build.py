@@ -27,6 +27,15 @@ REQUIRED = [
     'assets/application/pinyin_dict.c', 'assets/application/weather_forecast_icons.c',
     'assets/weather-background/fields.c', 'assets/weather-background/fields.h',
     'assets/weather-background/NOTICE.md', 'tools/prepare-weather-contact.py',
+    'firmware/main/weather_service.c', 'firmware/main/weather_service.h',
+    'firmware/main/weather_http_guard.c', 'firmware/main/weather_http_guard.h',
+    'firmware/main/network_memory.c', 'firmware/main/network_memory.h',
+    'tools/alarm-audio/select.cmake', 'tools/alarm-audio/prepare-private.py',
+    'firmware/features/alarm-audio/alarm_reference.c',
+    'tools/network-hardening/apply.cmake',
+    'tools/network-hardening/tls/prepare.py',
+    'tools/network-hardening/sdio/prepare.py',
+    'tools/network-hardening/sdio/streaming-rx.inc',
 ] + [f'firmware/core/{name}.{ext}' for name in CORE for ext in ('c', 'h')]
 
 

@@ -32,7 +32,7 @@ void aa_source_render(aa_source *s, int16_t *out, size_t count, bool fade)
                                    (float)i / (AA_FADE - 1)) : 1.0f;
         float value = aa_reference[s->phase] * gain * envelope;
         out[i] = (int16_t)lroundf(value);
-        if (++s->phase == AA_PERIOD) s->phase = 0;
+        if (++s->phase == aa_reference_count) s->phase = 0;
         if (s->rise < (s->preview ? AA_RATE / 10u : 30u * AA_RATE)) ++s->rise;
     }
 }

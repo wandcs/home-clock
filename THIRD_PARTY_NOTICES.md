@@ -11,7 +11,7 @@
 | 简繁转换来源 | BYVoid/OpenCC，Apache-2.0 | [OpenCC LICENSE](LICENSES/OpenCC-Apache-2.0.txt)、[NOTICE](LICENSES/OpenCC-NOTICE.txt) |
 | 节假日数据与年度fixture | NateScarlet/holiday-cn，MIT；项目有解析、缓存及格式转换 | [holiday-cn](LICENSES/holiday-cn-MIT.txt) |
 
-ESP-IDF 6.1和19个固定注册表组件由构建环境/组件管理器取得，不作为本仓库自有MIT内容重新授权。版本约束位于firmware/dependency-constraints.txt，安装后保留组件原始许可证。
+ESP-IDF 6.1和19个固定注册表组件由构建环境/组件管理器取得，不作为本仓库自有MIT内容重新授权。版本约束位于firmware/dependency-constraints.txt，安装后保留组件原始许可证。 [网络局部修正](tools/network-hardening/README.md)中的第三方源码差异及构建目录内的 ESP-IDF/esp-hosted 派生源继续保留上游版权和 Apache-2.0 许可，不纳入项目自有 MIT 授权。
 
 ## 字体、图标与程序图形
 

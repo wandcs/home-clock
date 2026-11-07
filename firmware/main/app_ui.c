@@ -3,6 +3,7 @@
 #include "app_ui.h"
 #include "wifi_ui.h"
 #include "network_time.h"
+#include "network_memory.h"
 #include "weather_service.h"
 #include "weather_hint.h"
 #include "../../assets/application/weather_hint_fonts.h"
@@ -62,7 +63,9 @@ static lv_obj_t *weather_page,*weather_sources,*weather_title,*weather_value,*we
 static lv_obj_t *weather_place,*weather_admin,*weather_clock,*weather_update,*weather_notice,*weather_empty,*weather_zone;
 static lv_obj_t *weather_current_wind,*weather_wind_symbol,*weather_wind_separator,*weather_hit,*weather_source_body,*weather_source_license,*weather_source_identity;
 static lv_obj_t *day_date[7],*day_week[7],*day_icon[7],*day_kind[7],*day_range[7],*day_rain[7];
-static lv_obj_t *day_hint_icon[7],*weather_update_icon,*weather_update_state;
+static lv_obj_t *day_hint_icon[7],*weather_update_icon,*weather_update_state,*weather_refresh_hit;
+static const char *weather_refresh_feedback;
+static uint64_t weather_refresh_feedback_until;
 /* Keep the existing diagnostic kind ids; selection lives in weather_hint.c. */
 typedef enum { DAY_HINT_UNKNOWN,DAY_HINT_WIND,DAY_HINT_UV,DAY_HINT_RAIN,
     DAY_HINT_GUST,DAY_HINT_RAIN_STRONG,DAY_HINT_FREEZING_RAIN,DAY_HINT_SNOW_STRONG,
@@ -254,7 +257,9 @@ void app_ui_status(const char *event,uint32_t rid) {
     printf(",\"alarm_runtime_known\":%s,\"alarm_storage_state\":%d,\"alarm_entries\":[",alarm_runtime.known?"true":"false",alarm_runtime.storage);
     for(unsigned i=0;i<alarm_runtime.config.count;++i){const am_entry *e=&alarm_runtime.config.entries[i];printf("%s{\"id\":%"PRIu32",\"hour\":%u,\"minute\":%u,\"mode\":%u,\"enabled\":%s}",i?",":"",e->id,e->hour,e->minute,e->mode,e->enabled?"true":"false");}
     printf("]");
-    printf(",\"internal8_free\":%u,\"internal8_min\":%u,\"internal8_largest\":%u,\"dma_free\":%u,\"dma_min\":%u",(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA),(unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA));
+    printf(",\"internal8_free\":%u,\"internal8_min\":%u,\"internal8_largest\":%u,\"dma_free\":%u,\"dma_min\":%u,\"dma_largest\":%u",(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT),(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA),(unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA),(unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA));
+    network_memory_snapshot_t memory=network_memory_read();
+    printf(",\"alloc_failures\":%"PRIu32",\"alloc_fail_first_size\":%zu,\"alloc_fail_first_caps\":%"PRIu32",\"alloc_fail_first_ms\":%"PRIu64,memory.failures,memory.first_size,memory.first_caps,memory.first_us/1000);
     printf(",\"weather_slots\":[");
     for(int i=0;i<7;i++){
         char high[20]="--",low[20]="--",rain[20]="--";bool range_estimated=false;const char *provider="--";
@@ -635,6 +640,17 @@ static void clicked(lv_event_t *e) {
     else if(action==14) show_page(0);
     else if(action==15) {volume_preview_failed=false;show_page(7);volume_refresh();}
     else if(action==16) show_page(1);
+    else if(action==17&&page==3&&browse_allowed()&&!browse_moving()) {
+        weather_refresh_result_t result=weather_request_refresh();
+        if(result==WEATHER_REFRESH_ACCEPTED)weather_refresh_feedback="已请求更新";
+        else if(result==WEATHER_REFRESH_NO_LOCATION)weather_refresh_feedback="设置天气位置";
+        else if(result==WEATHER_REFRESH_NOT_READY) {
+            network_state_t n=app_network_read();
+            weather_refresh_feedback=!n.connected?"网络未连接":!n.time_valid?"等待校时":"稍后再试";
+        } else weather_refresh_feedback="稍后再试";
+        weather_refresh_feedback_until=uptime()+2500;
+        render_weather();
+    }
     lv_label_set_text_fmt(brightness_label,"%d%%",brightness);
     printf("{\"event\":\"ui\",\"request_id\":%"PRIu32",\"boot_id\":%"PRIu32",\"uptime_ms\":%"PRIu64",\"source\":\"%s\",\"action\":%d,\"page\":%d,\"event_seq\":%"PRIu32"}\n",request_id,boot_id,uptime(),lv_event_get_indev(e)==physical?"physical":"virtual",action,page,event_seq);
 }
@@ -983,20 +999,28 @@ static void render_weather(void) {
         static const char sample[]="样例 ";size_t length=strlen(text),prefix=sizeof sample-1;
         if(length+prefix<sizeof text){memmove(text+prefix,text,length+1);memcpy(text,sample,prefix);}
     }
-    /* Static acquisition mark, never a refresh action. Preserve coverage and
-     * failure text separately, so the time keeps its quiet 24px numeric font. */
+    /* A tap acknowledges intent only. Preserve the actual acquired time while
+     * the service owns request coalescing, recovery and eventual outcome. */
+    if(!w.configured)weather_refresh_feedback=NULL;
+    if(weather_refresh_feedback&&now<weather_refresh_feedback_until)
+        snprintf(text,sizeof text,"%s",weather_refresh_feedback);
+    else weather_refresh_feedback=NULL;
     text_if_changed(weather_update_state,text);lv_obj_set_hidden(weather_update_state,!w.configured);
     bool show_acquired=w.configured&&n.time_valid&&forecast.usable_count;
     text_if_changed(weather_update,show_acquired?acquired:"");
-    lv_obj_set_hidden(weather_update,!show_acquired);lv_obj_set_hidden(weather_update_icon,!show_acquired);
+    lv_obj_set_hidden(weather_update,!show_acquired);lv_obj_set_hidden(weather_update_icon,!w.configured);
+    lv_obj_set_hidden(weather_refresh_hit,!w.configured);
     int state_width=weather_text_width(text),time_width=0;
-    if(show_acquired){
-        lv_point_t size;lv_text_get_size(&size,acquired,&lv_font_montserrat_24,0,0,374,LV_TEXT_FLAG_NONE);time_width=size.x;
-        int available=374-22-8-time_width-(state_width?8:0);if(state_width>available)state_width=available;
+    if(w.configured){
+        if(show_acquired){
+            lv_point_t size;lv_text_get_size(&size,acquired,&lv_font_montserrat_24,0,0,374,LV_TEXT_FLAG_NONE);time_width=size.x;
+        }
+        int available=374-22-(show_acquired?8+time_width:0)-(state_width?8:0);
+        if(state_width>available)state_width=available;
         lv_obj_set_pos(weather_update_icon,48+state_width+(state_width?8:0),550);
         lv_obj_set_pos(weather_update,48+state_width+(state_width?8:0)+30,547);
     }
-    lv_obj_set_width(weather_update_state,show_acquired?(state_width?state_width:1):374);
+    lv_obj_set_width(weather_update_state,w.configured?(state_width?state_width:1):374);
     weather_provider_t daily_provider=WX_PROVIDER_UNKNOWN;
     for(unsigned i=0;i<WEATHER_DAYS;i++)if(w.data.days[i].present){daily_provider=w.data.days[i].provider;break;}
     snprintf(text,sizeof text,"当前 %s\n七日 %s\n天气时区 %s",
@@ -1264,6 +1288,10 @@ static void create_ui(void) {
     weather_update_icon=hint_graphic(weather_page,true);lv_obj_set_pos(weather_update_icon,48,550);
     weather_update=label(weather_page,"",78,547,&lv_font_montserrat_24,0x778994);
     lv_obj_set_size(weather_update,100,32);lv_label_set_long_mode(weather_update,LV_LABEL_LONG_CLIP);
+    weather_refresh_hit=box(weather_page,40,528,384,64,0);
+    lv_obj_set_style_bg_opa(weather_refresh_hit,LV_OPA_TRANSP,0);lv_obj_set_clickable(weather_refresh_hit,true);
+    lv_obj_set_click_focusable(weather_refresh_hit,false);
+    lv_obj_add_event_cb(weather_refresh_hit,clicked,LV_EVENT_CLICKED,(void *)(intptr_t)17);
     lv_obj_t *source_hit=button(weather_page,"来源",804,528,180,11);lv_obj_set_height(source_hit,64);
     lv_obj_set_style_bg_opa(source_hit,LV_OPA_TRANSP,0);lv_obj_set_style_border_width(source_hit,0,0);
     weather_empty=button(weather_page,"设置天气位置",48,536,300,8);lv_obj_set_height(weather_empty,64);

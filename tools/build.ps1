@@ -4,7 +4,8 @@ param(
     [switch]$Check,
     [switch]$Development,
     [ValidateNotNullOrEmpty()][string]$BuildDirectory = '.local/public-build',
-    [ValidateNotNullOrEmpty()][string]$MetContactConfig
+    [ValidateNotNullOrEmpty()][string]$MetContactConfig,
+    [ValidateNotNullOrEmpty()][string]$AlarmAudioWav
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
@@ -46,6 +47,12 @@ $doctorArguments = @((Join-Path $PSScriptRoot 'check-build.py'), '--build-direct
 if ($contactPath) { $doctorArguments += @('--met-contact-config', $contactPath) }
 & $python @doctorArguments
 if ($LASTEXITCODE -ne 0) { throw 'Build prerequisites are incomplete. See the checks above.' }
+$alarmPath = ''
+if ($PSBoundParameters.ContainsKey('AlarmAudioWav')) {
+    $alarmPath = Get-ProjectPath $AlarmAudioWav
+    & $python (Join-Path $PSScriptRoot 'alarm-audio/prepare-private.py') --input $alarmPath --check
+    if ($LASTEXITCODE -ne 0) { throw 'Explicit alarm audio is missing or invalid.' }
+}
 if ($Check) { return }
 
 $configPath = Join-Path $buildPath 'sdkconfig'
@@ -77,6 +84,7 @@ $start.WorkingDirectory = $projectRoot
 $start.EnvironmentVariables['IDF_COMPONENT_CONSTRAINT_FILES'] = Join-Path $projectRoot 'firmware/dependency-constraints.txt'
 $start.EnvironmentVariables.Remove('IDF_COMPONENT_CONSTRAINTS')
 $start.EnvironmentVariables['HOME_CLOCK_MET_CONTACT_CONFIG'] = $contactPath
+$start.EnvironmentVariables['HOME_CLOCK_ALARM_AUDIO_WAV'] = $alarmPath
 if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
     $compiler = (Get-Command riscv32-esp-elf-gcc -CommandType Application | Select-Object -First 1).Path
     $shortBin = Get-ShortCompilerBin $projectRoot $compiler
@@ -98,7 +106,7 @@ if ($start.PSObject.Properties['ArgumentList']) {
     if ($idfArguments | Where-Object { $_ -match '[\s"]' }) { throw 'Use PowerShell 7 or paths without spaces/quotes.' }
     $start.Arguments = $idfArguments -join ' '
 }
-Write-Host ('Building ESP32-P4, diagnostics=' + [bool]$Development + ', MET contact=' + [bool]$contactPath)
+Write-Host ('Building ESP32-P4, diagnostics=' + [bool]$Development + ', MET contact=' + [bool]$contactPath + ', private alarm=' + [bool]$alarmPath)
 $process = [Diagnostics.Process]::Start($start)
 $process.WaitForExit()
 if ($process.ExitCode -ne 0) { throw "ESP-IDF build failed (exit $($process.ExitCode))." }

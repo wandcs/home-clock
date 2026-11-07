@@ -13,7 +13,9 @@ void aa_source_preview_reset(aa_source *s); /* 100ms rise to normal final platfo
 /* Valid initialized source/output required. fade=true requires count=AA_FADE. */
 void aa_source_render(aa_source *s, int16_t *out, size_t count, bool fade);
 double aa_gain(uint32_t sample);
-extern const int16_t aa_reference[AA_PERIOD];
+/* The public default is AA_PERIOD; an explicit private build may use a longer loop. */
+extern const int16_t aa_reference[];
+extern const uint32_t aa_reference_count;
 
 /* start/stop/status are nonblocking task-context calls, not ISR APIs.
  * One owner calls aa_pump; it alone may call blocking sink operations.
